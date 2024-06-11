@@ -1,0 +1,160 @@
+<!-- BEGIN_TF_DOCS -->
+# Startup example
+
+This deploys the module with init container.
+
+```hcl
+resource "random_id" "rg_name" {
+  byte_length = 8
+}
+
+resource "random_id" "env_name" {
+  byte_length = 8
+}
+
+resource "random_id" "container_name" {
+  byte_length = 4
+}
+
+resource "azurerm_resource_group" "test" {
+  location = var.location
+  name     = "example-container-app-${random_id.rg_name.hex}-init-container"
+}
+
+module "container_apps" {
+  source                         = "../.."
+  resource_group_name            = azurerm_resource_group.test.name
+  location                       = var.location
+  container_app_environment_name = "example-env-${random_id.env_name.hex}"
+
+  container_apps = {
+    example = {
+      name          = "example"
+      revision_mode = "Single"
+
+      template = {
+        init_containers = [
+          {
+            name   = "debian"
+            image  = "debian:latest"
+            memory = "0.5Gi"
+            cpu    = 0.25
+            command = [
+              "/bin/sh",
+            ]
+            args = [
+              "-c", "echo Hello from the debian container > /shared/index.html"
+            ]
+            volume_mounts = [
+              {
+                name = "shared"
+                path = "/shared"
+              }
+            ]
+          }
+        ],
+        containers = [
+          {
+            name   = "nginx"
+            image  = "nginx:latest"
+            memory = "1Gi"
+            cpu    = 0.5
+            volume_mounts = {
+              name = "shared"
+              path = "/usr/share/nginx/html"
+            }
+          }
+        ],
+        volume = [
+          {
+            name         = "shared"
+            storage_type = "EmptyDir"
+          }
+        ]
+      }
+
+
+      ingress = {
+        allow_insecure_connections = false
+        target_port                = 80
+        external_enabled           = true
+
+        traffic_weight = {
+          latest_revision = true
+          percentage      = 100
+        }
+      }
+    },
+  }
+  log_analytics_workspace_name = "container-app-module-lawn-${random_id.container_name.hex}"
+}
+```
+
+<!-- markdownlint-disable MD033 -->
+## Requirements
+
+The following requirements are needed by this module:
+
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.2)
+
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.85, < 4.0)
+
+- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.0.0)
+
+## Providers
+
+The following providers are used by this module:
+
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.85, < 4.0)
+
+- <a name="provider_random"></a> [random](#provider\_random) (>= 3.0.0)
+
+## Resources
+
+The following resources are used by this module:
+
+- [azurerm_resource_group.test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
+- [random_id.env_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
+- [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
+
+<!-- markdownlint-disable MD013 -->
+## Required Inputs
+
+No required inputs.
+
+## Optional Inputs
+
+The following input variables are optional (have default values):
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: n/a
+
+Type: `string`
+
+Default: `"eastus"`
+
+## Outputs
+
+The following outputs are exported:
+
+### <a name="output_url"></a> [url](#output\_url)
+
+Description: n/a
+
+## Modules
+
+The following Modules are called:
+
+### <a name="module_container_apps"></a> [container\_apps](#module\_container\_apps)
+
+Source: ../..
+
+Version:
+
+<!-- markdownlint-disable-next-line MD041 -->
+## Data Collection
+
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
+<!-- END_TF_DOCS -->
