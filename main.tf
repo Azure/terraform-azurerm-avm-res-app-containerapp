@@ -150,7 +150,7 @@ resource "azurerm_container_app" "this" {
         }
       }
       dynamic "init_container" {
-        for_each = template.value.init_container == null ? [] : template.value.init_container
+        for_each = template.value.init_containers == null ? [] : template.value.init_containers
         content {
           image   = init_container.value.image
           name    = init_container.value.name
