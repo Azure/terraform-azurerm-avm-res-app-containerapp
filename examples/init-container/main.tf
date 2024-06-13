@@ -16,17 +16,17 @@ resource "azurerm_resource_group" "test" {
 }
 
 resource "azurerm_container_app_environment" "example" {
-  name                = "my-environment"
   location            = azurerm_resource_group.test.location
+  name                = "my-environment"
   resource_group_name = azurerm_resource_group.test.name
 }
 
 module "container_apps" {
-  source                         = "../.."
-  resource_group_name            = azurerm_resource_group.test.name
-  container_app_environment_id   = azurerm_container_app_environment.example.id
-  name                           = "app-with-init-container-${random_id.container_name.hex}"
-  revision_mode                  = "Single"
+  source                       = "../.."
+  resource_group_name          = azurerm_resource_group.test.name
+  container_app_environment_id = azurerm_container_app_environment.example.id
+  name                         = "app-with-init-container-${random_id.container_name.hex}"
+  revision_mode                = "Single"
   template = {
     init_containers = [
       {
