@@ -27,7 +27,7 @@ variable "template" {
     max_replicas    = optional(number)
     min_replicas    = optional(number)
     revision_suffix = optional(string)
-    azure_queue_scale_rule = optional(list(object({
+    azure_queue_scale_rules = optional(list(object({
       name         = string
       queue_length = number
       queue_name   = string
@@ -48,7 +48,7 @@ variable "template" {
         secret_name = optional(string)
         value       = optional(string)
       })))
-      liveness_probe = optional(list(object({
+      liveness_probes = optional(list(object({
         failure_count_threshold = optional(number)
         host                    = optional(string)
         initial_delay           = optional(number)
@@ -62,7 +62,7 @@ variable "template" {
           value = string
         })))
       })))
-      readiness_probe = optional(list(object({
+      readiness_probes = optional(list(object({
         failure_count_threshold = optional(number)
         host                    = optional(string)
         interval_seconds        = optional(number)
@@ -94,7 +94,7 @@ variable "template" {
         path = string
       })))
     }))
-    custom_scale_rule = optional(list(object({
+    custom_scale_rules = optional(list(object({
       custom_rule_type = string
       metadata         = map(string)
       name             = string
@@ -103,7 +103,7 @@ variable "template" {
         trigger_parameter = string
       })))
     })))
-    http_scale_rule = optional(list(object({
+    http_scale_rules = optional(list(object({
       concurrent_requests = string
       name                = string
       authentication = optional(list(object({
@@ -111,7 +111,7 @@ variable "template" {
         trigger_parameter = optional(string)
       })))
     })))
-    init_container = optional(list(object({
+    init_containers = optional(list(object({
       args    = optional(list(string))
       command = optional(list(string))
       cpu     = optional(number)
@@ -128,7 +128,7 @@ variable "template" {
         path = string
       })))
     })))
-    tcp_scale_rule = optional(list(object({
+    tcp_scale_rules = optional(list(object({
       concurrent_requests = string
       name                = string
       authentication = optional(list(object({
@@ -136,7 +136,7 @@ variable "template" {
         trigger_parameter = optional(string)
       })))
     })))
-    volume = optional(list(object({
+    volumes = optional(list(object({
       name         = string
       storage_name = optional(string)
       storage_type = optional(string)
