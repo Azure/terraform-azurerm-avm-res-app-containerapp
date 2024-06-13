@@ -440,7 +440,7 @@ variable "managed_identities" {
   nullable    = false
 }
 
-variable "registry" {
+variable "registries" {
   type = list(object({
     identity             = optional(string)
     password_secret_name = optional(string)
@@ -492,8 +492,7 @@ variable "secrets" {
     name                = string
     value               = optional(string)
   }))
-  default     = {}
-  nullable = false
+  default     = null
   description = <<-EOT
  - `identity` - (Optional) The identity to use for accessing the Key Vault secret reference. This can either be the Resource ID of a User Assigned Identity, or `System` for the System Assigned Identity.
  - `key_vault_secret_id` - (Optional) The ID of a Key Vault secret. This can be a versioned or version-less ID.
