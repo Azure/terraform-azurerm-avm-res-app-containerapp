@@ -24,15 +24,6 @@ resource "azurerm_resource_group" "test" {
   name     = "example-container-app-${random_id.rg_name.hex}"
 }
 
-module "public_ip" {
-  source  = "lonegunmanb/public-ip/lonegunmanb"
-  version = "0.1.0"
-}
-
-locals {
-  public_ip = module.public_ip.public_ip
-}
-
 resource "azurerm_virtual_network" "vnet" {
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.test.location
@@ -45,7 +36,7 @@ resource "azurerm_subnet" "subnet" {
   name                                          = "subnet1"
   resource_group_name                           = azurerm_resource_group.test.name
   virtual_network_name                          = azurerm_virtual_network.vnet.name
-  private_endpoint_network_policies_enabled     = false
+  private_endpoint_network_policies             = "Disabled"
   private_link_service_network_policies_enabled = false
   service_endpoints                             = ["Microsoft.ContainerRegistry"]
 }
@@ -80,7 +71,9 @@ locals {
   acr_login_server = [
     for c in azurerm_private_endpoint.pep.custom_dns_configs : c.ip_addresses[0]
     if c.fqdn == "${azurerm_container_registry.acr.name}.azurecr.io"
-  ][0]
+    ][
+    0
+  ]
 }
 
 resource "azurerm_private_dns_a_record" "private" {
@@ -126,12 +119,12 @@ resource "azurerm_container_registry" "acr" {
     zone_redundancy_enabled = true
   }
   network_rule_set {
-    default_action = "Deny"
+    default_action = "Allow"
 
-    ip_rule {
-      action   = "Allow"
-      ip_range = "${local.public_ip}/32"
-    }
+    #     ip_rule {
+    #       action   = "Allow"
+    #       ip_range = coalesce(var.acr_allow_ip_cidr, "${local.public_ip}/32")
+    #     }
     virtual_network {
       action    = "Allow"
       subnet_id = azurerm_subnet.subnet.id
@@ -178,6 +171,7 @@ resource "azurerm_container_registry_token_password" "pushtokenpassword" {
   password1 {
     expiry = timeadd(timestamp(), "24h")
   }
+
   lifecycle {
     ignore_changes = [password1]
   }
@@ -189,6 +183,7 @@ resource "azurerm_container_registry_token_password" "pulltokenpassword" {
   password1 {
     expiry = timeadd(timestamp(), "24h")
   }
+
   lifecycle {
     ignore_changes = [password1]
   }
@@ -203,56 +198,54 @@ resource "docker_tag" "nginx" {
   target_image = "${azurerm_container_registry.acr.login_server}/${docker_image.nginx.name}"
 }
 
+resource "azurerm_container_app_environment" "example" {
+  location                 = azurerm_resource_group.test.location
+  name                     = "test-environment"
+  resource_group_name      = azurerm_resource_group.test.name
+  infrastructure_subnet_id = azurerm_subnet.subnet.id
+}
+
 module "container_apps" {
   source = "../.."
 
-  resource_group_name                                = azurerm_resource_group.test.name
-  location                                           = azurerm_resource_group.test.location
-  log_analytics_workspace_name                       = "loganalytics-${random_id.rg_name.hex}"
-  container_app_environment_name                     = "example-env-${random_id.env_name.hex}"
-  container_app_environment_infrastructure_subnet_id = azurerm_subnet.subnet.id
-
-  container_apps = {
-    nginx = {
-      name          = "nginx"
-      revision_mode = "Single"
-
-      template = {
-        containers = [
-          {
-            name   = "nginx"
-            memory = "0.5Gi"
-            cpu    = 0.25
-            image  = "${azurerm_container_registry.acr.login_server}/nginx"
-          }
-        ]
-      }
-      ingress = {
-        allow_insecure_connections = false
-        external_enabled           = true
-        target_port                = 80
-        traffic_weight = {
-          latest_revision = true
-          percentage      = 100
-        }
-      }
-      registry = [
-        {
-          server               = azurerm_container_registry.acr.login_server
-          username             = azurerm_container_registry_token.pulltoken.name
-          password_secret_name = "secname"
-        }
-      ]
-    }
-  }
-
-  container_app_secrets = {
-    nginx = [
+  resource_group_name          = azurerm_resource_group.test.name
+  container_app_environment_id = azurerm_container_app_environment.example.id
+  name                         = "nginx"
+  revision_mode                = "Single"
+  template = {
+    containers = [
       {
-        name  = "secname"
-        value = azurerm_container_registry_token_password.pulltokenpassword.password1[0].value
+        name   = "nginx"
+        memory = "0.5Gi"
+        cpu    = 0.25
+        image  = "${azurerm_container_registry.acr.login_server}/nginx"
       }
     ]
+  }
+  registries = [
+    {
+      server               = azurerm_container_registry.acr.login_server
+      username             = azurerm_container_registry_token.pulltoken.name
+      password_secret_name = "secname"
+    }
+  ]
+  ingress = {
+    allow_insecure_connections = false
+    external_enabled           = true
+    target_port                = 80
+    traffic_weight = [
+      {
+        latest_revision = true
+        percentage      = 100
+      }
+    ]
+  }
+
+  secrets = {
+    nginx = {
+      name  = "secname"
+      value = azurerm_container_registry_token_password.pulltokenpassword.password1[0].value
+    }
   }
   depends_on = [null_resource.docker_push]
 }
