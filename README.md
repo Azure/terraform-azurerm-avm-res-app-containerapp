@@ -40,7 +40,7 @@ The following resources are used by this module:
 
 The following input variables are required:
 
-### <a name="input_container_app_environment_id"></a> [container\_app\_environment\_id](#input\_container\_app\_environment\_id)
+### <a name="input_container_app_environment_resource_id"></a> [container\_app\_environment\_resource\_id](#input\_container\_app\_environment\_resource\_id)
 
 Description: The ID of the Container App Environment to host this Container App.
 
