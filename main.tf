@@ -1,5 +1,5 @@
 resource "azurerm_container_app" "this" {
-  container_app_environment_id = var.container_app_environment_id
+  container_app_environment_id = var.container_app_environment_resource_id
   name                         = var.name
   resource_group_name          = var.resource_group_name
   revision_mode                = var.revision_mode

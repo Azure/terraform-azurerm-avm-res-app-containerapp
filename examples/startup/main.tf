@@ -27,11 +27,11 @@ resource "azurerm_container_app_environment" "example" {
 }
 
 module "counting" {
-  source                       = "../.."
-  container_app_environment_id = azurerm_container_app_environment.example.id
-  name                         = local.counting_app_name
-  resource_group_name          = azurerm_resource_group.test.name
-  revision_mode                = "Single"
+  source                                = "../.."
+  container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  name                                  = local.counting_app_name
+  resource_group_name                   = azurerm_resource_group.test.name
+  revision_mode                         = "Single"
   template = {
     containers = [
       {
@@ -60,11 +60,11 @@ module "counting" {
 }
 
 module "dashboard" {
-  source                       = "../.."
-  container_app_environment_id = azurerm_container_app_environment.example.id
-  name                         = local.dashboard_app_name
-  resource_group_name          = azurerm_resource_group.test.name
-  revision_mode                = "Single"
+  source                                = "../.."
+  container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  name                                  = local.dashboard_app_name
+  resource_group_name                   = azurerm_resource_group.test.name
+  revision_mode                         = "Single"
   template = {
     containers = [
       {

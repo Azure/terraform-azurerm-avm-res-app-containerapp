@@ -1,4 +1,4 @@
-variable "container_app_environment_id" {
+variable "container_app_environment_resource_id" {
   type        = string
   description = "The ID of the Container App Environment to host this Container App."
   nullable    = false
