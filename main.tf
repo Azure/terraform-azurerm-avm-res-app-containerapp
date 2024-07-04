@@ -239,9 +239,9 @@ resource "azurerm_container_app" "this" {
         for_each = ingress.value.ip_security_restriction == null ? [] : ingress.value.ip_security_restriction
         content {
           action           = ip_security_restriction.value.action
-          description      = ip_security_restriction.value.description
           ip_address_range = ip_security_restriction.value.ip_address_range
           name             = ip_security_restriction.value.name
+          description      = ip_security_restriction.value.description
         }
       }
     }
@@ -259,9 +259,9 @@ resource "azurerm_container_app" "this" {
     for_each = nonsensitive(var.secrets) == null ? {} : nonsensitive(var.secrets)
     content {
       name                = secret.value.name
-      value               = sensitive(secret.value.value)
       identity            = secret.value.identity
       key_vault_secret_id = secret.value.key_vault_secret_id
+      value               = sensitive(secret.value.value)
     }
   }
   dynamic "timeouts" {
