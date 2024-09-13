@@ -8,6 +8,7 @@ resource "azurerm_container_app" "this" {
 
   dynamic "template" {
     for_each = [var.template]
+
     content {
       max_replicas    = template.value.max_replicas
       min_replicas    = template.value.min_replicas
@@ -15,6 +16,7 @@ resource "azurerm_container_app" "this" {
 
       dynamic "container" {
         for_each = template.value.containers
+
         content {
           cpu     = container.value.cpu
           image   = container.value.image
@@ -25,6 +27,7 @@ resource "azurerm_container_app" "this" {
 
           dynamic "env" {
             for_each = container.value.env == null ? [] : container.value.env
+
             content {
               name        = env.value.name
               secret_name = env.value.secret_name
@@ -33,6 +36,7 @@ resource "azurerm_container_app" "this" {
           }
           dynamic "liveness_probe" {
             for_each = container.value.liveness_probes == null ? [] : container.value.liveness_probes
+
             content {
               port                    = liveness_probe.value.port
               transport               = liveness_probe.value.transport
@@ -45,6 +49,7 @@ resource "azurerm_container_app" "this" {
 
               dynamic "header" {
                 for_each = liveness_probe.value.header == null ? [] : liveness_probe.value.header
+
                 content {
                   name  = header.value.name
                   value = header.value.value
@@ -54,6 +59,7 @@ resource "azurerm_container_app" "this" {
           }
           dynamic "readiness_probe" {
             for_each = container.value.readiness_probes == null ? [] : container.value.readiness_probes
+
             content {
               port                    = readiness_probe.value.port
               transport               = readiness_probe.value.transport
@@ -66,6 +72,7 @@ resource "azurerm_container_app" "this" {
 
               dynamic "header" {
                 for_each = readiness_probe.value.header == null ? [] : readiness_probe.value.header
+
                 content {
                   name  = header.value.name
                   value = header.value.value
@@ -75,6 +82,7 @@ resource "azurerm_container_app" "this" {
           }
           dynamic "startup_probe" {
             for_each = container.value.startup_probe == null ? [] : container.value.startup_probe
+
             content {
               port                    = startup_probe.value.port
               transport               = startup_probe.value.transport
@@ -86,6 +94,7 @@ resource "azurerm_container_app" "this" {
 
               dynamic "header" {
                 for_each = startup_probe.value.header == null ? [] : startup_probe.value.header
+
                 content {
                   name  = header.value.name
                   value = header.value.value
@@ -95,6 +104,7 @@ resource "azurerm_container_app" "this" {
           }
           dynamic "volume_mounts" {
             for_each = container.value.volume_mounts == null ? [] : container.value.volume_mounts
+
             content {
               name = volume_mounts.value.name
               path = volume_mounts.value.path
@@ -104,6 +114,7 @@ resource "azurerm_container_app" "this" {
       }
       dynamic "azure_queue_scale_rule" {
         for_each = template.value.azure_queue_scale_rules == null ? [] : template.value.azure_queue_scale_rules
+
         content {
           name         = azure_queue_scale_rule.value.name
           queue_length = azure_queue_scale_rule.value.queue_length
@@ -111,6 +122,7 @@ resource "azurerm_container_app" "this" {
 
           dynamic "authentication" {
             for_each = azure_queue_scale_rule.value.authentication
+
             content {
               secret_name       = authentication.value.secret_name
               trigger_parameter = authentication.value.trigger_parameter
@@ -120,6 +132,7 @@ resource "azurerm_container_app" "this" {
       }
       dynamic "custom_scale_rule" {
         for_each = template.value.custom_scale_rules == null ? [] : template.value.custom_scale_rules
+
         content {
           custom_rule_type = custom_scale_rule.value.custom_rule_type
           metadata         = custom_scale_rule.value.metadata
@@ -127,6 +140,7 @@ resource "azurerm_container_app" "this" {
 
           dynamic "authentication" {
             for_each = custom_scale_rule.value.authentication == null ? [] : custom_scale_rule.value.authentication
+
             content {
               secret_name       = authentication.value.secret_name
               trigger_parameter = authentication.value.trigger_parameter
@@ -136,12 +150,14 @@ resource "azurerm_container_app" "this" {
       }
       dynamic "http_scale_rule" {
         for_each = template.value.http_scale_rules == null ? [] : template.value.http_scale_rules
+
         content {
           concurrent_requests = http_scale_rule.value.concurrent_requests
           name                = http_scale_rule.value.name
 
           dynamic "authentication" {
             for_each = http_scale_rule.value.authentication == null ? [] : http_scale_rule.value.authentication
+
             content {
               secret_name       = authentication.value.secret_name
               trigger_parameter = authentication.value.trigger_parameter
@@ -151,6 +167,7 @@ resource "azurerm_container_app" "this" {
       }
       dynamic "init_container" {
         for_each = template.value.init_containers == null ? [] : template.value.init_containers
+
         content {
           image   = init_container.value.image
           name    = init_container.value.name
@@ -161,6 +178,7 @@ resource "azurerm_container_app" "this" {
 
           dynamic "env" {
             for_each = init_container.value.env == null ? [] : init_container.value.env
+
             content {
               name        = env.value.name
               secret_name = env.value.secret_name
@@ -169,6 +187,7 @@ resource "azurerm_container_app" "this" {
           }
           dynamic "volume_mounts" {
             for_each = init_container.value.volume_mounts == null ? [] : init_container.value.volume_mounts
+
             content {
               name = volume_mounts.value.name
               path = volume_mounts.value.path
@@ -178,12 +197,14 @@ resource "azurerm_container_app" "this" {
       }
       dynamic "tcp_scale_rule" {
         for_each = template.value.tcp_scale_rules == null ? [] : template.value.tcp_scale_rules
+
         content {
           concurrent_requests = tcp_scale_rule.value.concurrent_requests
           name                = tcp_scale_rule.value.name
 
           dynamic "authentication" {
             for_each = tcp_scale_rule.value.authentication == null ? [] : tcp_scale_rule.value.authentication
+
             content {
               secret_name       = authentication.value.secret_name
               trigger_parameter = authentication.value.trigger_parameter
@@ -193,6 +214,7 @@ resource "azurerm_container_app" "this" {
       }
       dynamic "volume" {
         for_each = template.value.volumes == null ? [] : template.value.volumes
+
         content {
           name         = volume.value.name
           storage_name = volume.value.storage_name
@@ -203,6 +225,7 @@ resource "azurerm_container_app" "this" {
   }
   dynamic "dapr" {
     for_each = var.dapr == null ? [] : [var.dapr]
+
     content {
       app_id       = dapr.value.app_id
       app_port     = dapr.value.app_port
@@ -212,6 +235,7 @@ resource "azurerm_container_app" "this" {
   ## Resources supporting both SystemAssigned and UserAssigned
   dynamic "identity" {
     for_each = local.managed_identities.system_assigned_user_assigned
+
     content {
       type         = identity.value.type
       identity_ids = identity.value.user_assigned_resource_ids
@@ -219,6 +243,7 @@ resource "azurerm_container_app" "this" {
   }
   dynamic "ingress" {
     for_each = var.ingress == null ? [] : [var.ingress]
+
     content {
       target_port                = ingress.value.target_port
       allow_insecure_connections = ingress.value.allow_insecure_connections
@@ -228,6 +253,7 @@ resource "azurerm_container_app" "this" {
 
       dynamic "traffic_weight" {
         for_each = ingress.value.traffic_weight
+
         content {
           percentage      = traffic_weight.value.percentage
           label           = traffic_weight.value.label
@@ -237,6 +263,7 @@ resource "azurerm_container_app" "this" {
       }
       dynamic "ip_security_restriction" {
         for_each = ingress.value.ip_security_restriction == null ? [] : ingress.value.ip_security_restriction
+
         content {
           action           = ip_security_restriction.value.action
           ip_address_range = ip_security_restriction.value.ip_address_range
@@ -248,6 +275,7 @@ resource "azurerm_container_app" "this" {
   }
   dynamic "registry" {
     for_each = var.registries == null ? [] : var.registries
+
     content {
       server               = registry.value.server
       identity             = registry.value.identity
@@ -257,6 +285,7 @@ resource "azurerm_container_app" "this" {
   }
   dynamic "secret" {
     for_each = nonsensitive(var.secrets) == null ? {} : nonsensitive(var.secrets)
+
     content {
       name                = secret.value.name
       identity            = secret.value.identity
@@ -266,6 +295,7 @@ resource "azurerm_container_app" "this" {
   }
   dynamic "timeouts" {
     for_each = var.container_app_timeouts == null ? [] : [var.container_app_timeouts]
+
     content {
       create = timeouts.value.create
       delete = timeouts.value.delete
@@ -285,6 +315,7 @@ resource "azurerm_container_app_custom_domain" "this" {
 
   dynamic "timeouts" {
     for_each = each.value.timeouts == null ? [] : [each.value.timeouts]
+
     content {
       create = timeouts.value.create
       delete = timeouts.value.delete
