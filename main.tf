@@ -305,13 +305,34 @@ resource "azurerm_container_app" "this" {
   }
 }
 
+resource "azurerm_container_app_environment_certificate" "this" {
+  for_each = var.container_app_environment_certificate
+
+  certificate_blob_base64      = each.value.certificate_blob_base64
+  certificate_password         = each.value.certificate_password
+  container_app_environment_id = var.container_app_environment_resource_id
+  name                         = each.value.name
+  tags                         = each.value.tags
+
+  dynamic "timeouts" {
+    for_each = each.value.timeouts == null ? [] : [each.value.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+}
+
 resource "azurerm_container_app_custom_domain" "this" {
   for_each = var.custom_domains
 
   container_app_id                         = azurerm_container_app.this.id
   name                                     = each.value.name
   certificate_binding_type                 = each.value.certificate_binding_type
-  container_app_environment_certificate_id = each.value.container_app_environment_certificate_id
+  container_app_environment_certificate_id = try(azurerm_container_app_environment_certificate.this[each.value.container_app_environment_certificate_key].id, each.value.container_app_environment_certificate_id)
 
   dynamic "timeouts" {
     for_each = each.value.timeouts == null ? [] : [each.value.timeouts]

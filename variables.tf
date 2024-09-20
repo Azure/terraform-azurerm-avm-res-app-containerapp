@@ -285,6 +285,36 @@ EOT
   nullable    = false
 }
 
+variable "container_app_environment_certificate" {
+  type = map(object({
+    certificate_blob_base64 = string
+    certificate_password    = string
+    name                    = string
+    tags                    = optional(map(string))
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      read   = optional(string)
+      update = optional(string)
+    }))
+  }))
+  default     = {}
+  description = <<-EOT
+ - `certificate_blob_base64` - (Required) The Certificate Private Key as a base64 encoded PFX or PEM. Changing this forces a new resource to be created.
+ - `certificate_password` - (Required) The password for the Certificate. Changing this forces a new resource to be created.
+ - `name` - (Required) The name of the Container Apps Environment Certificate. Changing this forces a new resource to be created.
+ - `tags` - (Optional) A mapping of tags to assign to the resource.
+
+ ---
+ `timeouts` block supports the following:
+ - `create` - (Defaults to 30 minutes) Used when creating the Container App Environment Certificate.
+ - `delete` - (Defaults to 30 minutes) Used when deleting the Container App Environment Certificate.
+ - `read` - (Defaults to 5 minutes) Used when retrieving the Container App Environment Certificate.
+ - `update` - (Defaults to 30 minutes) Used when updating the Container App Environment Certificate.
+EOT
+  nullable    = false
+}
+
 variable "container_app_timeouts" {
   type = object({
     create = optional(string)
@@ -303,9 +333,10 @@ EOT
 
 variable "custom_domains" {
   type = map(object({
-    certificate_binding_type                 = optional(string)
-    container_app_environment_certificate_id = optional(string)
-    name                                     = string
+    certificate_binding_type                  = optional(string)
+    container_app_environment_certificate_id  = optional(string)
+    container_app_environment_certificate_key = optional(string)
+    name                                      = string
     timeouts = optional(object({
       create = optional(string)
       delete = optional(string)
@@ -316,6 +347,7 @@ variable "custom_domains" {
   description = <<-EOT
  - `certificate_binding_type` - (Optional) The Certificate Binding type. Possible values include `Disabled` and `SniEnabled`.  Required with `container_app_environment_certificate_id`. Changing this forces a new resource to be created.
  - `container_app_environment_certificate_id` - (Optional) The ID of the Container App Environment Certificate to use. Changing this forces a new resource to be created.
+ - `container_app_environment_certificate_key` - (Optional) The Key of the `var.container_app_environment_certificate` to use. Changing this forces a new resource to be created.
  - `name` - (Required) The fully qualified name of the Custom Domain. Must be the CN or a named SAN in the certificate specified by the `container_app_environment_certificate_id`. Changing this forces a new resource to be created.
 
  ---

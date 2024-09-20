@@ -14,6 +14,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.85, < 4.0)
 
+- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (>= 0.3.2, < 1.0)
+
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.0)
 
 ## Resources
@@ -22,12 +24,13 @@ The following resources are used by this module:
 
 - [azurerm_container_app.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app) (resource)
 - [azurerm_container_app_custom_domain.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_custom_domain) (resource)
+- [azurerm_container_app_environment_certificate.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_environment_certificate) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
-- [modtm_telemetry.telemetry](https://registry.terraform.io/providers/hashicorp/modtm/latest/docs/resources/telemetry) (resource)
+- [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azurerm_client_config.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
-- [modtm_module_source.telemetry](https://registry.terraform.io/providers/hashicorp/modtm/latest/docs/data-sources/module_source) (data source)
+- [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -327,6 +330,39 @@ object({
 
 The following input variables are optional (have default values):
 
+### <a name="input_container_app_environment_certificate"></a> [container\_app\_environment\_certificate](#input\_container\_app\_environment\_certificate)
+
+Description: - `certificate_blob_base64` - (Required) The Certificate Private Key as a base64 encoded PFX or PEM. Changing this forces a new resource to be created.
+- `certificate_password` - (Required) The password for the Certificate. Changing this forces a new resource to be created.
+- `name` - (Required) The name of the Container Apps Environment Certificate. Changing this forces a new resource to be created.
+- `tags` - (Optional) A mapping of tags to assign to the resource.
+
+---
+`timeouts` block supports the following:
+- `create` - (Defaults to 30 minutes) Used when creating the Container App Environment Certificate.
+- `delete` - (Defaults to 30 minutes) Used when deleting the Container App Environment Certificate.
+- `read` - (Defaults to 5 minutes) Used when retrieving the Container App Environment Certificate.
+- `update` - (Defaults to 30 minutes) Used when updating the Container App Environment Certificate.
+
+Type:
+
+```hcl
+map(object({
+    certificate_blob_base64 = string
+    certificate_password    = string
+    name                    = string
+    tags                    = optional(map(string))
+    timeouts = optional(object({
+      create = optional(string)
+      delete = optional(string)
+      read   = optional(string)
+      update = optional(string)
+    }))
+  }))
+```
+
+Default: `{}`
+
 ### <a name="input_container_app_timeouts"></a> [container\_app\_timeouts](#input\_container\_app\_timeouts)
 
 Description: - `create` - (Defaults to 30 minutes) Used when creating the Container App.
@@ -351,6 +387,7 @@ Default: `null`
 
 Description: - `certificate_binding_type` - (Optional) The Certificate Binding type. Possible values include `Disabled` and `SniEnabled`.  Required with `container_app_environment_certificate_id`. Changing this forces a new resource to be created.
 - `container_app_environment_certificate_id` - (Optional) The ID of the Container App Environment Certificate to use. Changing this forces a new resource to be created.
+- `container_app_environment_certificate_key` - (Optional) The Key of the `var.container_app_environment_certificate` to use. Changing this forces a new resource to be created.
 - `name` - (Required) The fully qualified name of the Custom Domain. Must be the CN or a named SAN in the certificate specified by the `container_app_environment_certificate_id`. Changing this forces a new resource to be created.
 
 ---
@@ -363,9 +400,10 @@ Type:
 
 ```hcl
 map(object({
-    certificate_binding_type                 = optional(string)
-    container_app_environment_certificate_id = optional(string)
-    name                                     = string
+    certificate_binding_type                  = optional(string)
+    container_app_environment_certificate_id  = optional(string)
+    container_app_environment_certificate_key = optional(string)
+    name                                      = string
     timeouts = optional(object({
       create = optional(string)
       delete = optional(string)
