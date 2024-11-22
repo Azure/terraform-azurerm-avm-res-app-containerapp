@@ -11,7 +11,7 @@ resource "azurerm_resource_group" "test" {
 
 resource "azurerm_container_app_environment" "example" {
   location            = azurerm_resource_group.test.location
-  name                = random_string.this.result
+  name                = "test-${random_string.this.result}-env"
   resource_group_name = azurerm_resource_group.test.name
 }
 
@@ -24,7 +24,7 @@ module "app" {
   template = {
     containers = [
       {
-        name   = random_string.this.result
+        name   = "python-${random_string.this.result}-container"
         memory = "0.5Gi"
         cpu    = 0.25
         image  = "jackofallops/azure-containerapps-python-acctest:v0.0.1"
