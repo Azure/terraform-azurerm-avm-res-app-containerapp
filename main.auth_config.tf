@@ -1,12 +1,10 @@
 resource "azapi_resource" "auth_config" {
   for_each = var.auth_configs
 
-  type      = "Microsoft.App/containerApps/authConfigs@2024-03-01"
-  name      = each.value.name
-  parent_id = azurerm_container_app.this.id
+  type = "Microsoft.App/containerApps/authConfigs@2024-03-01"
   body = {
     properties = {
-      platform = each.value.platform == null ? null :{
+      platform = each.value.platform == null ? null : {
         enabled        = try(each.value.platform.enabled, null)
         runtimeVersion = try(each.value.platform.runtime_version, null)
       }
@@ -113,21 +111,21 @@ resource "azapi_resource" "auth_config" {
             registration = v.registration == null ? null : {
               clientId = try(v.registration.client_id, null)
               clientCredential = v.registration.client_credential == null ? null : {
-                method = try(v.registration.client_credential.method, null)
+                method                  = try(v.registration.client_credential.method, null)
                 clientSecretSettingName = try(v.registration.client_credential.client_secret_setting_name, null)
               }
               openIdConnectConfiguration = v.registration.open_id_connect_configuration == null ? null : {
                 authorizationEndpoint = try(v.registration.
                 open_id_connect_configuration.authorization_endpoint, null)
-                tokenEndpoint = try(v.registration.open_id_connect_configuration.token_endpoint, null)
-                issuer = try(v.registration.open_id_connect_configuration.issuer, null)
-                certificationUri = try(v.registration.open_id_connect_configuration.certification_uri, null)
+                tokenEndpoint                = try(v.registration.open_id_connect_configuration.token_endpoint, null)
+                issuer                       = try(v.registration.open_id_connect_configuration.issuer, null)
+                certificationUri             = try(v.registration.open_id_connect_configuration.certification_uri, null)
                 wellKnownOpenIdConfiguration = try(v.registration.open_id_connect_configuration.well_known_open_id_configuration, null)
               }
             }
             login = v.login == null ? null : {
               nameClaimType = try(v.login.name_claim_type, null)
-              scopes = try(v.login.scopes, null)
+              scopes        = try(v.login.scopes, null)
             }
           }
         }
@@ -164,4 +162,6 @@ resource "azapi_resource" "auth_config" {
       }
     }
   }
+  name      = each.value.name
+  parent_id = azurerm_container_app.this.id
 }

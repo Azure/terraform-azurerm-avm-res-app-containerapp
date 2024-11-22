@@ -63,49 +63,74 @@ module "counting" {
       percentage      = 100
     }]
   }
-}
-
-module "dashboard" {
-  source                                = "../.."
-  container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  name                                  = local.dashboard_app_name
-  resource_group_name                   = azurerm_resource_group.test.name
-  revision_mode                         = "Single"
-  template = {
-    containers = [
-      {
-        name   = "testdashboard"
-        memory = "1Gi"
-        cpu    = 0.5
-        image  = "docker.io/hashicorp/dashboard-service:0.0.4"
-        env = [
-          {
-            name  = "PORT"
-            value = "8080"
-          },
-          {
-            name  = "COUNTING_SERVICE_URL"
-            value = "http://${local.counting_app_name}"
+  auth_configs = {
+    fake_facebook = {
+      name = "current"
+      global_validation = {
+        unauthenticated_client_action = "AllowAnonymous"
+      }
+      identity_providers = {
+        facebook = {
+          registration = {
+            app_id                  = "123"
+            app_secret_setting_name = "facebook-secret"
           }
-        ]
-      },
-    ]
+        }
+      }
+      platform = {
+        enabled = true
+      }
+    }
   }
-
-  ingress = {
-    allow_insecure_connections = false
-    target_port                = 8080
-    external_enabled           = true
-
-    traffic_weight = [{
-      latest_revision = true
-      percentage      = 100
-    }]
-  }
-  managed_identities = {
-    system_assigned = true
+  secrets = {
+    facebook_secret = {
+      name  = "facebook-secret"
+      value = "very_secret"
+    }
   }
 }
+
+# module "dashboard" {
+#   source                                = "../.."
+#   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+#   name                                  = local.dashboard_app_name
+#   resource_group_name                   = azurerm_resource_group.test.name
+#   revision_mode                         = "Single"
+#   template = {
+#     containers = [
+#       {
+#         name   = "testdashboard"
+#         memory = "1Gi"
+#         cpu    = 0.5
+#         image  = "docker.io/hashicorp/dashboard-service:0.0.4"
+#         env = [
+#           {
+#             name  = "PORT"
+#             value = "8080"
+#           },
+#           {
+#             name  = "COUNTING_SERVICE_URL"
+#             value = "http://${local.counting_app_name}"
+#           }
+#         ]
+#       },
+#     ]
+#   }
+#
+#   ingress = {
+#     allow_insecure_connections = false
+#     target_port                = 8080
+#     external_enabled           = true
+#
+#     traffic_weight = [{
+#       latest_revision = true
+#       percentage      = 100
+#     }]
+#   }
+#   managed_identities = {
+#     system_assigned = true
+#   }
+# }
 
 # module "container_apps" {
 #   source                         = "../.."
@@ -229,23 +254,13 @@ Default: `"eastus"`
 
 ## Outputs
 
-The following outputs are exported:
-
-### <a name="output_dashboard_url"></a> [dashboard\_url](#output\_dashboard\_url)
-
-Description: n/a
+No outputs.
 
 ## Modules
 
 The following Modules are called:
 
 ### <a name="module_counting"></a> [counting](#module\_counting)
-
-Source: ../..
-
-Version:
-
-### <a name="module_dashboard"></a> [dashboard](#module\_dashboard)
 
 Source: ../..
 
