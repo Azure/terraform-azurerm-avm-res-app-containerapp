@@ -8,10 +8,6 @@ resource "random_id" "rg_name" {
   byte_length = 8
 }
 
-resource "random_id" "env_name" {
-  byte_length = 8
-}
-
 resource "random_id" "container_name" {
   byte_length = 4
 }
@@ -21,172 +17,64 @@ resource "azurerm_resource_group" "test" {
   name     = "example-container-app-${random_id.rg_name.hex}"
 }
 
-locals {
-  counting_app_name  = "counting-${random_id.container_name.hex}"
-  dashboard_app_name = "dashboard-${random_id.container_name.hex}"
-}
-
 resource "azurerm_container_app_environment" "example" {
   location            = azurerm_resource_group.test.location
-  name                = "my-environment"
+  name                = random_id.rg_name.hex
   resource_group_name = azurerm_resource_group.test.name
 }
 
-module "counting" {
+module "app" {
   source                                = "../.."
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  name                                  = local.counting_app_name
+  name                                  = "testapp"
   resource_group_name                   = azurerm_resource_group.test.name
   revision_mode                         = "Single"
   template = {
     containers = [
       {
-        name   = "countingservicetest1"
+        name   = random_id.container_name.hex
         memory = "0.5Gi"
         cpu    = 0.25
-        image  = "docker.io/hashicorp/counting-service:0.0.2"
-        env = [
-          {
-            name  = "PORT"
-            value = "9001"
-          }
-        ]
+        image  = "jackofallops/azure-containerapps-python-acctest:v0.0.1"
       },
     ]
   }
   ingress = {
     allow_insecure_connections = true
     external_enabled           = true
-    target_port                = 9001
+    target_port                = 5000
+    transport                  = "http"
     traffic_weight = [{
       latest_revision = true
       percentage      = 100
     }]
   }
-}
-
-module "dashboard" {
-  source                                = "../.."
-  container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  name                                  = local.dashboard_app_name
-  resource_group_name                   = azurerm_resource_group.test.name
-  revision_mode                         = "Single"
-  template = {
-    containers = [
-      {
-        name   = "testdashboard"
-        memory = "1Gi"
-        cpu    = 0.5
-        image  = "docker.io/hashicorp/dashboard-service:0.0.4"
-        env = [
-          {
-            name  = "PORT"
-            value = "8080"
-          },
-          {
-            name  = "COUNTING_SERVICE_URL"
-            value = "http://${local.counting_app_name}"
+  auth_configs = {
+    fake_facebook = {
+      name = "current"
+      global_validation = {
+        unauthenticated_client_action = "AllowAnonymous"
+      }
+      identity_providers = {
+        facebook = {
+          registration = {
+            app_id                  = "123"
+            app_secret_setting_name = "facebook-secret"
           }
-        ]
-      },
-    ]
+        }
+      }
+      platform = {
+        enabled = true
+      }
+    }
   }
-
-  ingress = {
-    allow_insecure_connections = false
-    target_port                = 8080
-    external_enabled           = true
-
-    traffic_weight = [{
-      latest_revision = true
-      percentage      = 100
-    }]
-  }
-  managed_identities = {
-    system_assigned = true
+  secrets = {
+    facebook_secret = {
+      name  = "facebook-secret"
+      value = "very_secret"
+    }
   }
 }
-
-# module "container_apps" {
-#   source                         = "../.."
-#   resource_group_name            = azurerm_resource_group.test.name
-#   location                       = var.location
-#   container_app_environment_name = "example-env-${random_id.env_name.hex}"
-#
-#   container_apps = {
-#     counting = {
-#       name          = local.counting_app_name
-#       revision_mode = "Single"
-#
-#       template = {
-#         containers = [
-#           {
-#             name   = "countingservicetest1"
-#             memory = "0.5Gi"
-#             cpu    = 0.25
-#             image  = "docker.io/hashicorp/counting-service:0.0.2"
-#             env = [
-#               {
-#                 name  = "PORT"
-#                 value = "9001"
-#               }
-#             ]
-#           },
-#         ]
-#       }
-#
-#       ingress = {
-#         allow_insecure_connections = true
-#         external_enabled           = true
-#         target_port                = 9001
-#         traffic_weight = {
-#           latest_revision = true
-#           percentage      = 100
-#         }
-#       }
-#     },
-#     dashboard = {
-#       name          = local.dashboard_app_name
-#       revision_mode = "Single"
-#
-#       template = {
-#         containers = [
-#           {
-#             name   = "testdashboard"
-#             memory = "1Gi"
-#             cpu    = 0.5
-#             image  = "docker.io/hashicorp/dashboard-service:0.0.4"
-#             env = [
-#               {
-#                 name  = "PORT"
-#                 value = "8080"
-#               },
-#               {
-#                 name  = "COUNTING_SERVICE_URL"
-#                 value = "http://${local.counting_app_name}"
-#               }
-#             ]
-#           },
-#         ]
-#       }
-#
-#       ingress = {
-#         allow_insecure_connections = false
-#         target_port                = 8080
-#         external_enabled           = true
-#
-#         traffic_weight = {
-#           latest_revision = true
-#           percentage      = 100
-#         }
-#       }
-#       identity = {
-#         type = "SystemAssigned"
-#       }
-#     },
-#   }
-#   log_analytics_workspace_name = "testlaws"
-# }
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -207,7 +95,6 @@ The following resources are used by this module:
 - [azurerm_container_app_environment.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_environment) (resource)
 - [azurerm_resource_group.test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
-- [random_id.env_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 
 <!-- markdownlint-disable MD013 -->
@@ -229,23 +116,13 @@ Default: `"eastus"`
 
 ## Outputs
 
-The following outputs are exported:
-
-### <a name="output_dashboard_url"></a> [dashboard\_url](#output\_dashboard\_url)
-
-Description: n/a
+No outputs.
 
 ## Modules
 
 The following Modules are called:
 
-### <a name="module_counting"></a> [counting](#module\_counting)
-
-Source: ../..
-
-Version:
-
-### <a name="module_dashboard"></a> [dashboard](#module\_dashboard)
+### <a name="module_app"></a> [app](#module\_app)
 
 Source: ../..
 

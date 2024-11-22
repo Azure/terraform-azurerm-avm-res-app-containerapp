@@ -37,7 +37,7 @@ module "app" {
     allow_insecure_connections = true
     external_enabled           = true
     target_port                = 5000
-    transport           = "http"
+    transport                  = "http"
     traffic_weight = [{
       latest_revision = true
       percentage      = 100

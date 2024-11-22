@@ -12,6 +12,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.3)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.85, < 4.0)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (>= 0.3.2, < 1.0)
@@ -22,6 +24,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.auth_config](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_container_app.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app) (resource)
 - [azurerm_container_app_custom_domain.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_custom_domain) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
@@ -328,6 +331,176 @@ object({
 ## Optional Inputs
 
 The following input variables are optional (have default values):
+
+### <a name="input_auth_configs"></a> [auth\_configs](#input\_auth\_configs)
+
+Description: n/a
+
+Type:
+
+```hcl
+map(object({
+    name = string
+    platform = optional(object({
+      enabled         = optional(bool)
+      runtime_version = optional(string)
+    }))
+    global_validation = optional(object({
+      unauthenticated_client_action = optional(string)
+      redirect_to_provider          = optional(string)
+      exclude_paths                 = optional(list(string))
+    }))
+    identity_providers = optional(object({
+      azure_active_directory = optional(object({
+        enabled = optional(bool)
+        registration = optional(object({
+          open_id_issuer                                     = optional(string)
+          client_id                                          = optional(string)
+          client_secret_setting_name                         = optional(string)
+          client_secret_certificate_issuer                   = optional(string)
+          client_secret_certificate_subject_alternative_name = optional(string)
+          client_secret_certificate_thumbprint               = optional(string)
+        }))
+        login = optional(object({
+          login_parameters         = list(string)
+          disable_www_authenticate = bool
+        }))
+        validation = optional(object({
+          jwt_claim_checks = optional(object({
+            allowed_groups              = optional(list(string))
+            allowed_client_applications = optional(list(string))
+          }))
+          allowed_audiences = optional(list(string))
+          default_authorization_policy = optional(object({
+            allowed_principals = optional(object({
+              groups     = optional(list(string))
+              identities = optional(list(string))
+            }))
+            allowed_applications = optional(list(string))
+          }))
+        }))
+        is_auto_provisioned = optional(bool)
+      }))
+      facebook = optional(object({
+        enabled = optional(bool)
+        registration = optional(object({
+          app_id                  = optional(string)
+          app_secret_setting_name = optional(string)
+        }))
+        graph_api_version = optional(string)
+        login = optional(object({
+          scopes = list(string)
+        }))
+      }))
+      github = optional(object({
+        enabled = optional(bool)
+        registration = optional(object({
+          client_id                  = optional(string)
+          client_secret_setting_name = optional(string)
+        }))
+        login = optional(object({
+          scopes = list(string)
+        }))
+      }))
+      google = optional(object({
+        enabled = optional(bool)
+        registration = optional(object({
+          client_id                  = optional(string)
+          client_secret_setting_name = optional(string)
+        }))
+        login = optional(object({
+          scopes = list(string)
+        }))
+        validation = optional(object({
+          allowed_audiences = list(string)
+        }))
+      }))
+      twitter = optional(object({
+        enabled = optional(bool)
+        registration = optional(object({
+          consumer_key                 = string
+          consumer_secret_setting_name = optional(string)
+        }))
+      }))
+      apple = optional(object({
+        enabled = optional(bool)
+        registration = optional(object({
+          client_id                  = string
+          client_secret_setting_name = optional(string)
+        }))
+        login = optional(object({
+          scopes = list(string)
+        }))
+      }))
+      azure_static_web_apps = optional(object({
+        enabled = optional(bool)
+        registration = optional(object({
+          client_id = string
+        }))
+      }))
+      custom_open_id_connect_providers = optional(map(object({
+        enabled = optional(bool)
+        registration = optional(object({
+          client_id = optional(string)
+          client_credential = optional(object({
+            method                     = string
+            client_secret_setting_name = string
+          }))
+          open_id_connect_configuration = optional(object({
+            authorization_endpoint           = string
+            token_endpoint                   = string
+            issuer                           = string
+            certification_uri                = string
+            well_known_open_id_configuration = optional(string)
+          }))
+        }))
+        login = optional(object({
+          name_claim_type = string
+          scopes          = list(string)
+        }))
+      })), {})
+    }))
+    login = optional(object({
+      routes = optional(object({
+        logout_endpoint = string
+      }))
+      token_store = optional(object({
+        enabled                       = bool
+        token_refersh_extension_hours = number
+        azure_blob_storage = optional(object({
+          sas_url_setting_name = string
+        }))
+      }))
+      preserve_url_fragments_for_logins = optional(bool)
+      allowed_external_redirect_urls    = optional(list(string))
+      cookie_expiration = optional(object({
+        convention         = optional(string)
+        time_to_expiration = optional(string)
+      }))
+      nonce = optional(object({
+        validate_nonce            = bool
+        nonce_expiration_interval = string
+      }))
+    }))
+    http_settings = optional(object({
+      require_https = optional(bool)
+      forward_proxy = optional(object({
+        convention               = optional(string)
+        custom_host_header_name  = optional(string)
+        custom_proto_header_name = optional(string)
+      }))
+      routes = optional(object({
+        api_prefix = string
+      }))
+    }))
+    encryption_settings = optional(object({
+      container_app_auth_encryption_secret_name = optional(string)
+      container_app_auth_signing_secret_name    = optional(string)
+    }))
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_container_app_timeouts"></a> [container\_app\_timeouts](#input\_container\_app\_timeouts)
 
