@@ -413,7 +413,7 @@ variable "auth_configs" {
       }))
       token_store = optional(object({
         enabled                       = bool
-        token_refersh_extension_hours = number
+        token_refresh_extension_hours = number
         azure_blob_storage = optional(object({
           sas_url_setting_name = string
         }))
@@ -447,6 +447,117 @@ variable "auth_configs" {
   }))
   default     = {}
   description = <<-EOT
+- `name` - (Required) Name of the Container App AuthConfig.
+
+---
+`platform` The configuration settings of the platform of ContainerApp Service Authentication/Authorization. The `platform` block supports the following:
+  - `enabled` - (Optional) `true` if the Authentication / Authorization feature is enabled for the current app; otherwise, `false`.
+  - `runtime_version` - (Optional) The RuntimeVersion of the Authentication / Authorization feature in use for the current app. The setting in this value can control the behavior of certain features in the Authentication / Authorization module.
+
+---
+`global_validation` The configuration settings that determines the validation flow of users using Service Authentication/Authorization. The `global_validation` block supports the following:
+  - `unauthenticated_client_action` - (Optional) The action to take when an unauthenticated client attempts to access the app. Possible values include `AllowAnonymous`, `RedirectToLoginPage`, `Return401`  and `Return403`.
+  - `redirect_to_provider` - (Optional) The default authentication provider to use when multiple providers are configured. This setting is only needed if multiple providers are configured and the unauthenticated client action is set to "RedirectToLoginPage".
+  - `exclude_paths` - (Optional) The paths for which unauthenticated flow would not be redirected to the login page.
+
+---
+`identity_providers` The configuration settings of each of the identity providers used to configure ContainerApp Service Authentication/Authorization. The `identity_providers` block supports the following:
+  - `azure_active_directory` - (Optional) The configuration settings of the Azure Active directory provider. The `azure_active_directory` block supports the following:
+    - `enabled` - (Optional) `false` if the Azure Active Directory provider should not be enabled despite the set registration; otherwise, `true`.
+    - `is_auto_provisioned` - (Optional) Gets a value indicating whether the Azure AD configuration was auto-provisioned using 1st party tooling. This is an internal flag primarily intended to support the Azure Management Portal. Users should not read or write to this property.
+    - `registration` - (Optional) The registration settings for the Azure Active Directory provider. The `registration` block supports the following:
+      - `open_id_issuer` - (Optional) The OpenID Connect Issuer URI that represents the entity which issues access tokens for this application. When using Azure Active Directory, this value is the URI of the directory tenant, e.g. https://login.microsoftonline.com/v2.0/{tenant-guid}/. This URI is a case-sensitive identifier for the token issuer. More information on OpenID Connect Discovery: http://openid.net/specs/openid-connect-discovery-1_0.html
+      - `client_id` - (Optional) The Client ID of this relying party application, known as the client_id. This setting is required for enabling OpenID Connection authentication with Azure Active Directory or other 3rd party OpenID Connect providers. More information on OpenID Connect: http://openid.net/specs/openid-connect-core-1_0.html
+      - `client_secret_setting_name` - (Optional) The app setting name that contains the client secret of the relying party application.
+      - `client_secret_certificate_issuer` - (Optional) An alternative to the client secret thumbprint, that is the issuer of a certificate used for signing purposes. This property acts as a replacement for the Client Secret Certificate Thumbprint. It is also optional.
+      - `client_secret_certificate_subject_alternative_name` - (Optional) An alternative to the client secret thumbprint, that is the subject alternative name of a certificate used for signing purposes. This property acts as a replacement for the Client Secret Certificate Thumbprint. It is also optional.
+    - `login` - (Optional) The login settings for the Azure Active Directory provider. The `login` block supports the following:
+      - `login_parameters` - (Optional) Login parameters to send to the OpenID Connect authorization endpoint when a user logs in. Each parameter must be in the form "key=value".
+      - `disable_www_authenticate` - (Optional) `true` if the www-authenticate provider should be omitted from the request; otherwise, `false`.
+    - `validation` - (Optional) The configuration settings of the Azure Active Directory token validation flow. The `validation` block supports the following:
+      - `jwt_claim_checks` - (Optional) The configuration settings of the checks that should be made while validating the JWT Claims. The `jwt_claim_checks` block supports the following:
+        - `allowed_groups` - (Optional) The list of the allowed groups.
+        - `allowed_client_applications` - (Optional) The list of the allowed client applications.
+      - `allowed_audiences` - (Optional) The list of audiences that can make successful authentication/authorization requests.
+      - `default_authorization_policy` - (Optional) The configuration settings of the default authorization policy. The `default_authorization_policy` block supports the following:
+        - `allowed_applications` - (Optional) The configuration settings of the Azure Active Directory allowed applications.
+        - `allowed_principals` - (Optional) The configuration settings of the Azure Active Directory allowed principals. The `allowed_principals` block supports the following:
+          - `groups` - (Optional) The list of the allowed groups.
+          - `identities` - (Optional) The list of the allowed identities.
+  - `facebook` - (Optional) The configuration settings of the Facebook provider. The `facebook` block supports the following:
+    - `enabled` - (Optional) `false` if the Facebook provider should not be enabled despite the set registration; otherwise, `true`.
+    - `graph_api_version` - (Optional) The version of the Facebook api to be used while logging in.
+    - `registration` - (Optional) The configuration settings of the app registration for the Facebook provider. The `registration` block supports the following:
+      - `app_id` - (Optional) The App ID of the app used for login.
+      - `app_secret_setting_name` - (Optional) The app setting name that contains the app secret.
+    - `login` - (Optional) The configuration settings of the login flow. The `login` block supports the following:
+      - `scopes` - (Optional) A list of the scopes that should be requested while authenticating.
+  - `github` - (Optional) The configuration settings of the GitHub provider. The `github` block supports the following:
+    - `enabled` - (Optional) `false` if the GitHub provider should not be enabled despite the set registration; otherwise, `true`.
+    - `registration` - (Optional) The configuration settings of the app registration for the GitHub provider. The `registration` block supports the following:
+      - `client_id` - (Optional) The Client ID of the app used for login.
+      - `client_secret_setting_name` - (Optional) The app setting name that contains the client secret.
+    - `login` - (Optional) The configuration settings of the login flow. The `login` block supports the following:
+      - `scopes` - (Optional) A list of the scopes that should be requested while authenticating.
+  - `google` - (Optional) The configuration settings of the Google provider.
+    - `enabled` - (Optional) `false` if the Google provider should not be enabled despite the set registration; otherwise, `true`.
+    - `registration` - (Optional) The configuration settings of the app registration for the Google provider. The `registration` block supports the following:
+      - `client_id` - (Optional) The Client ID of the app used for login.
+      - `client_secret_setting_name` - (Optional) The app setting name that contains the client secret.
+    - `login` - (Optional) The configuration settings of the login flow. The `login` block supports the following:
+      - `scopes` - (Optional) A list of the scopes that should be requested while authenticating.
+    - `validation` - (Optional) The configuration settings of the Azure Active Directory token validation flow. The `validation` block supports the following:
+      - `allowed_audiences` - (Optional) The configuration settings of the allowed list of audiences from which to validate the JWT token.
+  - `twitter` - (Optional) The configuration settings of the Twitter provider. The `twitter` block supports the following:
+    - `enabled` - (Optional) `false` if the Twitter provider should not be enabled despite the set registration; otherwise, `true`.
+    - `registration` - (Optional) The configuration settings of the app registration for the Twitter provider. The `registration` block supports the following:
+      - `consumer_key` - (Required) The OAuth 1.0a consumer key of the Twitter application used for sign-in. This setting is required for enabling Twitter Sign-In. Twitter Sign-In documentation: https://dev.twitter.com/web/sign-in
+      - `consumer_secret_setting_name` - (Optional) The app setting name that contains the OAuth 1.0a consumer secret of the Twitter application used for sign-in.
+  - `apple` - (Optional) The configuration settings of the Apple provider. The `apple` block supports the following:
+    - `enabled` - (Optional) `false` if the Apple provider should not be enabled despite the set registration; otherwise, `true`.
+    - `registration` - (Optional) The configuration settings of the Apple registration. The `registration` block supports the following:
+      - `client_id` - (Optional) The Client ID of the app used for login.
+      - `client_secret_setting_name` - (Optional) The app setting name that contains the client secret.
+    - `login` - (Optional) The configuration settings of the login flow. The `login` block supports the following:
+      - `scopes` - (Optional) A list of the scopes that should be requested while authenticating.
+  - `azure_static_web_apps` - (Optional) The configuration settings of the Azure Static Web Apps provider. The `azure_static_web_apps` block supports the following:
+    - `enabled` - (Optional) `false` if the Azure Static Web Apps provider should not be enabled despite the set registration; otherwise, `true`.
+    - `registration` - (Optional) The configuration settings of the Azure Static Web Apps registration. The `registration` block supports the following:
+      - `client_id` - (Optional) The Client ID of the app used for login.
+  - `custom_open_id_connect_providers` - (Optional) The map of the name of the alias of each custom Open ID Connect provider to the configuration settings of the custom Open ID Connect provider. The `custom_open_id_connect_providers`'s value supports the following:
+    - `enabled` - (Optional) `false` if the custom Open ID provider provider should not be enabled; otherwise, `true`.
+    - `registration` - (Optional) The configuration settings of the app registration for the custom Open ID Connect provider. The `registration` block supports the following:
+      - `client_id` - (Optional) The client id of the custom Open ID Connect provider.
+      - `client_credential` - (Optional) The authentication credentials of the custom Open ID Connect provider. The `client_credential` block supports the following:
+        - `method` - (Optional) The method that should be used to authenticate the user. Possible values `ClientSecretPost`.
+        - `client_secret_setting_name` - (Optional) The app setting that contains the client secret for the custom Open ID Connect provider.
+      - `open_id_connect_configuration` - (Optional) The configuration settings of the endpoints used for the custom Open ID Connect provider. The `open_id_connect_configuration` block supports the following:
+        - `authorization_endpoint` - (Optional) The endpoint to be used to make an authorization request.
+        - `certification_uri` - (Optional) The endpoint that provides the keys necessary to validate the token.
+        - `issuer` - (Optional) The endpoint that issues the token.
+        - `token_endpoint` - (Optional) The endpoint to be used to request a token.
+        - `well_known_open_id_configuration` - (Optional) The endpoint that contains all the configuration endpoints for the provider.
+    - `login` - (Optional) The configuration settings of the login flow of the custom Open ID Connect provider. The `login` block supports the following:
+      - `name_claim_type` - (Optional) The name of the claim that contains the users name.
+      - `scopes` - (Optional) A list of the scopes that should be requested while authenticating.
+
+---
+`login` - The configuration settings of the login flow of users using ContainerApp Service Authentication/Authorization. The `login` block supports the following:
+  - `routes` - (Optional) The routes that specify the endpoints used for login and logout requests. The `routes` block supports the following:
+    - `logout_endpoint` - (Optional) The endpoint at which a logout request should be made.
+  - `token_store` - (Optional) The configuration settings of the token store. The `token_store` block supports the following:
+    - `enabled` - (Optional) `true` to durably store platform-specific security tokens that are obtained during login flows; otherwise, `false`.
+    - `token_refresh_extension_hours` - (Optional) The number of hours after session token expiration that a session token can be used to call the token refresh API
+    - `azure_blob_storage` - (Optional) The configuration settings of the storage of the tokens if blob storage is used. The `azure_blob_storage` block supports the following:
+      - `sas_url_setting_name` - (Required) The name of the app secrets containing the SAS URL of the blob storage containing the tokens.
+  - `preserve_url_fragments_for_logins` - (Optional) `true` if the fragments from the request are preserved after the login request is made; otherwise, `false`.
+  - `allowed_external_redirect_urls` - (Optional) External URLs that can be redirected to as part of logging in or logging out of the app. Note that the query string part of the URL is ignored. This is an advanced setting typically only needed by Windows Store application backends. Note that URLs within the current domain are always implicitly allowed.
+  - `cookie_expiration` - (Optional) The configuration settings of the session cookie's expiration. The `cookie_expiration` block supports the following:
+    - `convention` - (Optional) The convention used when determining the session cookie's expiration.
+    - `time_to_expiration` - (Optional) The time after the request is made when the session cookie should expire.
+  - `nonce` - (Optional) The configuration settings of the nonce used in the login flow. The `nonce` block supports the following:
+    - `validate_nonce` - (Optional) `true` if the nonce should not be validated while completing the login flow; otherwise, `false`.
+    - `nonce_expiration_interval` - (Optional) The time after the request is made when the nonce should expire.
 EOT
   nullable    = false
 }
