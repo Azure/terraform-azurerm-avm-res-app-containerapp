@@ -136,7 +136,7 @@ resource "azapi_resource" "auth_config" {
         }
         tokenStore = each.value.login.token_store == null ? null : {
           enabled                    = try(each.value.login.token_store.enabled, null)
-          tokenRefreshExtensionHours = try(each.value.login.token_store.token_refersh_extension_hours, null)
+          tokenRefreshExtensionHours = try(each.value.login.token_store.token_refresh_extension_hours, null)
           azureBlobStorage = each.value.login.token_store.azure_blob_storage == null ? null : {
             sasUrlSettingName = try(each.value.login.token_store.azure_blob_storage.sas_url_setting_name, null)
           }
