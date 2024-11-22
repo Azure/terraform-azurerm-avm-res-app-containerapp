@@ -254,7 +254,11 @@ Default: `"eastus"`
 
 ## Outputs
 
-No outputs.
+The following outputs are exported:
+
+### <a name="output_dashboard_url"></a> [dashboard\_url](#output\_dashboard\_url)
+
+Description: n/a
 
 ## Modules
 
