@@ -10,9 +10,14 @@ resource "random_id" "container_name" {
   byte_length = 4
 }
 
+resource "azurerm_resource_provider_registration" "example" {
+  name = "Microsoft.App"
+}
+
 resource "azurerm_resource_group" "test" {
   location = var.location
   name     = "example-container-app-${random_id.rg_name.hex}"
+  depends_on = [azurerm_resource_provider_registration.example]
 }
 
 locals {
