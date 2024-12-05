@@ -113,6 +113,8 @@ resource "azurerm_container_registry" "acr" {
   sku                           = "Premium"
   admin_enabled                 = false
   public_network_access_enabled = true
+  retention_policy_in_days      = 7
+  trust_policy_enabled          = true
 
   georeplications {
     location                = var.backup_location1
@@ -127,21 +129,10 @@ resource "azurerm_container_registry" "acr" {
   network_rule_set {
     default_action = "Allow"
 
-    #     ip_rule {
-    #       action   = "Allow"
-    #       ip_range = coalesce(var.acr_allow_ip_cidr, "${local.public_ip}/32")
-    #     }
     virtual_network {
       action    = "Allow"
       subnet_id = azurerm_subnet.subnet.id
     }
-  }
-  retention_policy {
-    days    = 7
-    enabled = true
-  }
-  trust_policy {
-    enabled = true
   }
 }
 
@@ -264,7 +255,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.2)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.11, < 4.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
 - <a name="requirement_docker"></a> [docker](#requirement\_docker) (3.0.2)
 
