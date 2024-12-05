@@ -128,11 +128,6 @@ resource "azurerm_container_registry" "acr" {
   }
   network_rule_set {
     default_action = "Allow"
-
-    virtual_network {
-      action    = "Allow"
-      subnet_id = azurerm_subnet.subnet.id
-    }
   }
 }
 
