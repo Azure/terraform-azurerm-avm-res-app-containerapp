@@ -14,7 +14,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (>= 0.3.2, < 1.0)
 
@@ -692,6 +692,7 @@ Default: `true`
 ### <a name="input_ingress"></a> [ingress](#input\_ingress)
 
 Description: - `allow_insecure_connections` - (Optional) Should this ingress allow insecure connections?
+- `client_certificate_mode` - (Optional) The client certificate mode for the Ingress. Possible values are `require`, `accept`, and `ignore`.
 - `exposed_port` - (Optional) The exposed port on the container for the Ingress traffic.
 - `external_enabled` - (Optional) Are connections to this Ingress from outside the Container App Environment enabled? Defaults to `false`.
 - `target_port` - (Required) The target port on the container for the Ingress traffic.
@@ -722,6 +723,7 @@ Type:
 ```hcl
 object({
     allow_insecure_connections = optional(bool)
+    client_certificate_mode    = optional(string)
     exposed_port               = optional(number)
     external_enabled           = optional(bool)
     target_port                = number

@@ -56,6 +56,7 @@ module "counting" {
   }
   ingress = {
     allow_insecure_connections = true
+    client_certificate_mode    = "ignore"
     external_enabled           = true
     target_port                = 9001
     traffic_weight = [{
@@ -119,6 +120,7 @@ module "dashboard" {
 
   ingress = {
     allow_insecure_connections = false
+    client_certificate_mode    = "ignore"
     target_port                = 8080
     external_enabled           = true
 
@@ -140,7 +142,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.2)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.0.0)
 
