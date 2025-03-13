@@ -50,6 +50,7 @@ module "counting" {
   }
   ingress = {
     allow_insecure_connections = true
+    client_certificate_mode    = "ignore"
     external_enabled           = true
     target_port                = 9001
     traffic_weight = [{
@@ -113,6 +114,7 @@ module "dashboard" {
 
   ingress = {
     allow_insecure_connections = false
+    client_certificate_mode    = "ignore"
     target_port                = 8080
     external_enabled           = true
 

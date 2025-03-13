@@ -247,6 +247,7 @@ resource "azurerm_container_app" "this" {
     content {
       target_port                = ingress.value.target_port
       allow_insecure_connections = ingress.value.allow_insecure_connections
+      client_certificate_mode    = ingress.value.client_certificate_mode
       exposed_port               = ingress.value.exposed_port
       external_enabled           = ingress.value.external_enabled
       transport                  = ingress.value.transport
