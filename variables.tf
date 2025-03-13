@@ -631,6 +631,7 @@ DESCRIPTION
 variable "ingress" {
   type = object({
     allow_insecure_connections = optional(bool)
+    client_certificate_mode    = optional(string)
     exposed_port               = optional(number)
     external_enabled           = optional(bool)
     target_port                = number
@@ -656,6 +657,7 @@ variable "ingress" {
   default     = null
   description = <<-EOT
  - `allow_insecure_connections` - (Optional) Should this ingress allow insecure connections?
+ - `client_certificate_mode` - (Optional) The client certificate mode for the Ingress. Possible values are `require`, `accept`, and `ignore`.
  - `exposed_port` - (Optional) The exposed port on the container for the Ingress traffic.
  - `external_enabled` - (Optional) Are connections to this Ingress from outside the Container App Environment enabled? Defaults to `false`.
  - `target_port` - (Required) The target port on the container for the Ingress traffic.
