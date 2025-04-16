@@ -65,6 +65,7 @@ resource "azurerm_container_app" "this" {
               transport               = readiness_probe.value.transport
               failure_count_threshold = readiness_probe.value.failure_count_threshold
               host                    = readiness_probe.value.host
+              initial_delay           = readiness_probe.value.initial_delay
               interval_seconds        = readiness_probe.value.interval_seconds
               path                    = readiness_probe.value.path
               success_count_threshold = readiness_probe.value.success_count_threshold
