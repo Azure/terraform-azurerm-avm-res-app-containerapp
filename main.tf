@@ -89,6 +89,7 @@ resource "azurerm_container_app" "this" {
               transport               = startup_probe.value.transport
               failure_count_threshold = startup_probe.value.failure_count_threshold
               host                    = startup_probe.value.host
+              initial_delay           = startup_probe.value.initial_delay
               interval_seconds        = startup_probe.value.interval_seconds
               path                    = startup_probe.value.path
               timeout                 = startup_probe.value.timeout

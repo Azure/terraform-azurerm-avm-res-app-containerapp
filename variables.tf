@@ -80,6 +80,7 @@ variable "template" {
       startup_probe = optional(list(object({
         failure_count_threshold = optional(number)
         host                    = optional(string)
+        initial_delay           = optional(number)
         interval_seconds        = optional(number)
         path                    = optional(string)
         port                    = number
