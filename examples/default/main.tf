@@ -27,7 +27,8 @@ resource "azurerm_container_app_environment" "example" {
 }
 
 module "counting" {
-  source                                = "../.."
+  source = "../.."
+
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
@@ -48,16 +49,6 @@ module "counting" {
       },
     ]
   }
-  ingress = {
-    allow_insecure_connections = true
-    client_certificate_mode    = "ignore"
-    external_enabled           = true
-    target_port                = 9001
-    traffic_weight = [{
-      latest_revision = true
-      percentage      = 100
-    }]
-  }
   auth_configs = {
     fake_facebook = {
       name = "current"
@@ -77,6 +68,16 @@ module "counting" {
       }
     }
   }
+  ingress = {
+    allow_insecure_connections = true
+    client_certificate_mode    = "ignore"
+    external_enabled           = true
+    target_port                = 9001
+    traffic_weight = [{
+      latest_revision = true
+      percentage      = 100
+    }]
+  }
   secrets = {
     facebook_secret = {
       name  = "facebook-secret"
@@ -86,7 +87,8 @@ module "counting" {
 }
 
 module "dashboard" {
-  source                                = "../.."
+  source = "../.."
+
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
@@ -111,7 +113,6 @@ module "dashboard" {
       },
     ]
   }
-
   ingress = {
     allow_insecure_connections = false
     client_certificate_mode    = "ignore"
