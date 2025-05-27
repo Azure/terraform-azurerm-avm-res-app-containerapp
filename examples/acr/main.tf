@@ -194,9 +194,9 @@ resource "azurerm_container_app_environment" "example" {
 module "container_apps" {
   source = "../.."
 
-  resource_group_name                   = azurerm_resource_group.test.name
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
   name                                  = "nginx"
+  resource_group_name                   = azurerm_resource_group.test.name
   revision_mode                         = "Single"
   template = {
     containers = [
@@ -208,13 +208,6 @@ module "container_apps" {
       }
     ]
   }
-  registries = [
-    {
-      server               = azurerm_container_registry.acr.login_server
-      username             = azurerm_container_registry_token.pulltoken.name
-      password_secret_name = "secname"
-    }
-  ]
   ingress = {
     allow_insecure_connections = false
     external_enabled           = true
@@ -226,12 +219,19 @@ module "container_apps" {
       }
     ]
   }
-
+  registries = [
+    {
+      server               = azurerm_container_registry.acr.login_server
+      username             = azurerm_container_registry_token.pulltoken.name
+      password_secret_name = "secname"
+    }
+  ]
   secrets = {
     nginx = {
       name  = "secname"
       value = azurerm_container_registry_token_password.pulltokenpassword.password1[0].value
     }
   }
+
   depends_on = [null_resource.docker_push]
 }

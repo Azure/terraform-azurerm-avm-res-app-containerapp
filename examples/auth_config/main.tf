@@ -16,7 +16,8 @@ resource "azurerm_container_app_environment" "example" {
 }
 
 module "app" {
-  source                                = "../.."
+  source = "../.."
+
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
   name                                  = "testapp"
   resource_group_name                   = azurerm_resource_group.test.name
@@ -30,16 +31,6 @@ module "app" {
         image  = "jackofallops/azure-containerapps-python-acctest:v0.0.1"
       },
     ]
-  }
-  ingress = {
-    allow_insecure_connections = true
-    external_enabled           = true
-    target_port                = 5000
-    transport                  = "http"
-    traffic_weight = [{
-      latest_revision = true
-      percentage      = 100
-    }]
   }
   auth_configs = {
     fake_facebook = {
@@ -59,6 +50,16 @@ module "app" {
         enabled = true
       }
     }
+  }
+  ingress = {
+    allow_insecure_connections = true
+    external_enabled           = true
+    target_port                = 5000
+    transport                  = "http"
+    traffic_weight = [{
+      latest_revision = true
+      percentage      = 100
+    }]
   }
   secrets = {
     facebook_secret = {

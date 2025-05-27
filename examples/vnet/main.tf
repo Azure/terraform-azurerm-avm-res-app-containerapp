@@ -62,7 +62,8 @@ resource "azurerm_private_dns_a_record" "containerapp_record" {
 }
 
 module "counting" {
-  source                                = "../.."
+  source = "../.."
+
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
@@ -92,11 +93,13 @@ module "counting" {
       percentage      = 100
     }]
   }
+
   depends_on = [azurerm_private_dns_a_record.containerapp_record, azurerm_private_dns_zone_virtual_network_link.vnet_link]
 }
 
 module "dashboard" {
-  source                                = "../.."
+  source = "../.."
+
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
@@ -121,7 +124,6 @@ module "dashboard" {
       },
     ]
   }
-
   ingress = {
     allow_insecure_connections = false
     target_port                = 8080
