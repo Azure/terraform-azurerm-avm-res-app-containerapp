@@ -1,240 +1,207 @@
-resource "azurerm_container_app" "this" {
-  container_app_environment_id = var.container_app_environment_resource_id
-  name                         = var.name
-  resource_group_name          = var.resource_group_name
-  revision_mode                = var.revision_mode
-  tags                         = var.tags
-  workload_profile_name        = var.workload_profile_name
-
-  dynamic "template" {
-    for_each = [var.template]
-
-    content {
-      max_replicas    = template.value.max_replicas
-      min_replicas    = template.value.min_replicas
-      revision_suffix = template.value.revision_suffix
-
-      dynamic "container" {
-        for_each = template.value.containers
-
-        content {
-          cpu     = container.value.cpu
-          image   = container.value.image
-          memory  = container.value.memory
-          name    = container.value.name
-          args    = container.value.args
-          command = container.value.command
-
-          dynamic "env" {
-            for_each = container.value.env == null ? [] : container.value.env
-
-            content {
-              name        = env.value.name
-              secret_name = env.value.secret_name
-              value       = env.value.value
-            }
+resource "azapi_resource" "container_app" {
+  location  = var.location
+  name      = var.name
+  parent_id = local.resource_group_id
+  type      = "Microsoft.App/containerApps@2025-01-01"
+  body = {
+    properties = {
+      configuration = {
+        activeRevisionsMode = var.revision_mode
+        dapr = var.dapr != null ? {
+          appId              = var.dapr.app_id
+          appPort            = var.dapr.app_port
+          appProtocol        = var.dapr.app_protocol
+          enableApiLogging   = var.dapr.enable_api_logging
+          enabled            = var.dapr.enabled
+          httpMaxRequestSize = var.dapr.http_max_request_size
+          httpReadBufferSize = var.dapr.http_read_buffer_size
+          logLevel           = var.dapr.log_level
+        } : null
+        identitySettings = var.identity_settings != null ? [
+          for is in var.identity_settings : {
+            identity  = is.identity
+            lifecycle = is.lifecycle
           }
-          dynamic "liveness_probe" {
-            for_each = container.value.liveness_probes == null ? [] : container.value.liveness_probes
-
-            content {
-              port                    = liveness_probe.value.port
-              transport               = liveness_probe.value.transport
-              failure_count_threshold = liveness_probe.value.failure_count_threshold
-              host                    = liveness_probe.value.host
-              initial_delay           = liveness_probe.value.initial_delay
-              interval_seconds        = liveness_probe.value.interval_seconds
-              path                    = liveness_probe.value.path
-              timeout                 = liveness_probe.value.timeout
-
-              dynamic "header" {
-                for_each = liveness_probe.value.header == null ? [] : liveness_probe.value.header
-
-                content {
-                  name  = header.value.name
-                  value = header.value.value
-                }
+        ] : null
+        ingress = var.ingress != null ? {
+          allowInsecure         = var.ingress.allow_insecure_connections
+          clientCertificateMode = var.ingress.client_certificate_mode
+          exposedPort           = var.ingress.exposed_port
+          external              = var.ingress.external_enabled
+          targetPort            = var.ingress.target_port
+          transport             = var.ingress.transport
+          additionalPortMappings = var.ingress.additional_port_mappings != null ? [
+            for apm in var.ingress.additional_port_mappings : {
+              exposedPort = apm.exposed_port
+              external    = apm.external
+              targetPort  = apm.target_port
+            }
+          ] : null
+          corsPolicy = var.ingress.cors_policy != null ? {
+            allowCredentials = var.ingress.cors_policy.allow_credentials
+            allowedHeaders   = var.ingress.cors_policy.allowed_headers
+            allowedMethods   = var.ingress.cors_policy.allowed_methods
+            allowedOrigins   = var.ingress.cors_policy.allowed_origins
+            exposeHeaders    = var.ingress.cors_policy.expose_headers
+            maxAge           = var.ingress.cors_policy.max_age
+          } : null
+          customDomains = var.ingress.custom_domain != null ? [
+            {
+              bindingType   = var.ingress.custom_domain.certificate_binding_type
+              certificateId = var.ingress.custom_domain.certificate_id
+              name          = var.ingress.custom_domain.name
+            }
+          ] : null
+          ipSecurityRestrictions = var.ingress.ip_restrictions != null ? [
+            for ipr in var.ingress.ip_restrictions : {
+              action         = ipr.action
+              description    = ipr.description
+              ipAddressRange = ipr.ip_range
+              name           = ipr.name
+            }
+          ] : null
+          stickySessions = var.ingress.sticky_sessions != null ? {
+            affinity = var.ingress.sticky_sessions.affinity
+          } : null
+          traffic = var.ingress.traffic_weight == null ? [{
+            label          = ""
+            latestRevision = true
+            revisionName   = ""
+            weight         = 100
+            }] : [
+            for weight in var.ingress.traffic_weight : {
+              label          = weight.label
+              latestRevision = weight.latest_revision
+              revisionName   = weight.revision_suffix
+              weight         = weight.percentage
+            }
+          ]
+        } : null
+        maxInactiveRevisions = var.max_inactive_revisions
+        registries = var.registries != null ? [
+          for reg in var.registries : {
+            identity          = reg.identity
+            passwordSecretRef = reg.password_secret_name
+            server            = reg.server
+            username          = reg.username
+          }
+        ] : null
+        runtime = var.runtime != null ? {
+          java = var.runtime.java != null ? {
+            enableMetrics = var.runtime.java.enable_metrics
+          } : null
+        } : null
+        secrets = var.secrets != null ? [
+          for s in var.secrets : {
+            identity    = s.identity
+            keyVaultUrl = s.key_vault_secret_id
+            name        = s.name
+            value       = s.value
+          }
+        ] : null
+        service = var.service != null ? {
+          type = var.service.type
+        } : null
+      }
+      environmentId = var.container_app_environment_resource_id
+      template = {
+        containers = [
+          for cont in var.template.containers : {
+            args    = cont.args
+            command = cont.command
+            env = cont.env != null ? [
+              for e in cont.env : {
+                name      = e.name
+                secretRef = e.secret_name
+                value     = e.value
               }
+            ] : null
+            image  = cont.image
+            name   = cont.name
+            probes = length(local.container_probes[cont.name]) > 0 ? local.container_probes[cont.name] : null
+            resources = {
+              cpu    = cont.cpu
+              memory = cont.memory
             }
-          }
-          dynamic "readiness_probe" {
-            for_each = container.value.readiness_probes == null ? [] : container.value.readiness_probes
-
-            content {
-              port                    = readiness_probe.value.port
-              transport               = readiness_probe.value.transport
-              failure_count_threshold = readiness_probe.value.failure_count_threshold
-              host                    = readiness_probe.value.host
-              initial_delay           = readiness_probe.value.initial_delay
-              interval_seconds        = readiness_probe.value.interval_seconds
-              path                    = readiness_probe.value.path
-              success_count_threshold = readiness_probe.value.success_count_threshold
-              timeout                 = readiness_probe.value.timeout
-
-              dynamic "header" {
-                for_each = readiness_probe.value.header == null ? [] : readiness_probe.value.header
-
-                content {
-                  name  = header.value.name
-                  value = header.value.value
-                }
+            volumeMounts = cont.volume_mounts != null ? [
+              for vm in cont.volume_mounts : {
+                mountPath  = vm.path
+                subPath    = vm.sub_path
+                volumeName = vm.name
               }
-            }
+            ] : null
           }
-          dynamic "startup_probe" {
-            for_each = container.value.startup_probe == null ? [] : container.value.startup_probe
-
-            content {
-              port                    = startup_probe.value.port
-              transport               = startup_probe.value.transport
-              failure_count_threshold = startup_probe.value.failure_count_threshold
-              host                    = startup_probe.value.host
-              initial_delay           = startup_probe.value.initial_delay
-              interval_seconds        = startup_probe.value.interval_seconds
-              path                    = startup_probe.value.path
-              timeout                 = startup_probe.value.timeout
-
-              dynamic "header" {
-                for_each = startup_probe.value.header == null ? [] : startup_probe.value.header
-
-                content {
-                  name  = header.value.name
-                  value = header.value.value
-                }
+        ]
+        initContainers = var.template.init_containers != null ? [
+          for init_cont in var.template.init_containers : {
+            args    = init_cont.args
+            command = init_cont.command
+            env = init_cont.env != null ? [
+              for e in init_cont.env : {
+                name      = e.name
+                secretRef = e.secret_name
+                value     = e.value
               }
+            ] : null
+            image = init_cont.image
+            name  = init_cont.name
+            resources = {
+              cpu    = init_cont.cpu
+              memory = init_cont.memory
             }
+            volumeMounts = init_cont.volume_mounts != null ? [
+              for vm in init_cont.volume_mounts : {
+                mountPath  = vm.path
+                subPath    = vm.sub_path
+                volumeName = vm.name
+              }
+            ] : null
           }
-          dynamic "volume_mounts" {
-            for_each = container.value.volume_mounts == null ? [] : container.value.volume_mounts
-
-            content {
-              name = volume_mounts.value.name
-              path = volume_mounts.value.path
-            }
-          }
+        ] : null
+        revisionSuffix = var.template.revision_suffix
+        scale = {
+          minReplicas = var.template.min_replicas
+          maxReplicas = var.template.max_replicas
+          # Add missing scale properties
+          cooldownPeriod  = null # TODO add this as direct variable later
+          pollingInterval = null # TODO add this as direct variable later
+          rules           = length(local.scale_rules) > 0 ? local.scale_rules : null
         }
-      }
-      dynamic "azure_queue_scale_rule" {
-        for_each = template.value.azure_queue_scale_rules == null ? [] : template.value.azure_queue_scale_rules
-
-        content {
-          name         = azure_queue_scale_rule.value.name
-          queue_length = azure_queue_scale_rule.value.queue_length
-          queue_name   = azure_queue_scale_rule.value.queue_name
-
-          dynamic "authentication" {
-            for_each = azure_queue_scale_rule.value.authentication
-
-            content {
-              secret_name       = authentication.value.secret_name
-              trigger_parameter = authentication.value.trigger_parameter
-            }
+        serviceBinds = var.template.service_binds != null ? [
+          for sb in var.template.service_binds : {
+            name      = sb.name
+            serviceId = sb.service_id
           }
-        }
-      }
-      dynamic "custom_scale_rule" {
-        for_each = template.value.custom_scale_rules == null ? [] : template.value.custom_scale_rules
-
-        content {
-          custom_rule_type = custom_scale_rule.value.custom_rule_type
-          metadata         = custom_scale_rule.value.metadata
-          name             = custom_scale_rule.value.name
-
-          dynamic "authentication" {
-            for_each = custom_scale_rule.value.authentication == null ? [] : custom_scale_rule.value.authentication
-
-            content {
-              secret_name       = authentication.value.secret_name
-              trigger_parameter = authentication.value.trigger_parameter
-            }
+        ] : null
+        terminationGracePeriodSeconds = var.template.termination_grace_period_seconds
+        volumes = var.template.volumes != null ? [
+          for vol in var.template.volumes : {
+            name         = vol.name
+            storageType  = vol.storage_type
+            storageName  = vol.storage_name
+            mountOptions = vol.mount_options
+            secrets = vol.secrets != null ? [
+              for secret in vol.secrets : {
+                path      = secret.path
+                secretRef = secret.secret_name
+              }
+            ] : null
           }
-        }
+        ] : null
       }
-      dynamic "http_scale_rule" {
-        for_each = template.value.http_scale_rules == null ? [] : template.value.http_scale_rules
-
-        content {
-          concurrent_requests = http_scale_rule.value.concurrent_requests
-          name                = http_scale_rule.value.name
-
-          dynamic "authentication" {
-            for_each = http_scale_rule.value.authentication == null ? [] : http_scale_rule.value.authentication
-
-            content {
-              secret_name       = authentication.value.secret_name
-              trigger_parameter = authentication.value.trigger_parameter
-            }
-          }
-        }
-      }
-      dynamic "init_container" {
-        for_each = template.value.init_containers == null ? [] : template.value.init_containers
-
-        content {
-          image   = init_container.value.image
-          name    = init_container.value.name
-          args    = init_container.value.args
-          command = init_container.value.command
-          cpu     = init_container.value.cpu
-          memory  = init_container.value.memory
-
-          dynamic "env" {
-            for_each = init_container.value.env == null ? [] : init_container.value.env
-
-            content {
-              name        = env.value.name
-              secret_name = env.value.secret_name
-              value       = env.value.value
-            }
-          }
-          dynamic "volume_mounts" {
-            for_each = init_container.value.volume_mounts == null ? [] : init_container.value.volume_mounts
-
-            content {
-              name = volume_mounts.value.name
-              path = volume_mounts.value.path
-            }
-          }
-        }
-      }
-      dynamic "tcp_scale_rule" {
-        for_each = template.value.tcp_scale_rules == null ? [] : template.value.tcp_scale_rules
-
-        content {
-          concurrent_requests = tcp_scale_rule.value.concurrent_requests
-          name                = tcp_scale_rule.value.name
-
-          dynamic "authentication" {
-            for_each = tcp_scale_rule.value.authentication == null ? [] : tcp_scale_rule.value.authentication
-
-            content {
-              secret_name       = authentication.value.secret_name
-              trigger_parameter = authentication.value.trigger_parameter
-            }
-          }
-        }
-      }
-      dynamic "volume" {
-        for_each = template.value.volumes == null ? [] : template.value.volumes
-
-        content {
-          name         = volume.value.name
-          storage_name = volume.value.storage_name
-          storage_type = volume.value.storage_type
-        }
-      }
+      workloadProfileName = var.workload_profile_name
     }
   }
-  dynamic "dapr" {
-    for_each = var.dapr == null ? [] : [var.dapr]
+  response_export_values = [
+    "identity",
+    "properties.configuration.ingress",
+    "properties.customDomainVerificationId",
+    "properties.outboundIpAddresses",
+    "properties.revisionSuffix",
+  ]
+  schema_validation_enabled = true
+  tags                      = var.tags
 
-    content {
-      app_id       = dapr.value.app_id
-      app_port     = dapr.value.app_port
-      app_protocol = dapr.value.app_protocol
-    }
-  }
-  ## Resources supporting both SystemAssigned and UserAssigned
   dynamic "identity" {
     for_each = local.managed_identities.system_assigned_user_assigned
 
@@ -243,61 +210,8 @@ resource "azurerm_container_app" "this" {
       identity_ids = identity.value.user_assigned_resource_ids
     }
   }
-  dynamic "ingress" {
-    for_each = var.ingress == null ? [] : [var.ingress]
-
-    content {
-      target_port                = ingress.value.target_port
-      allow_insecure_connections = ingress.value.allow_insecure_connections
-      client_certificate_mode    = ingress.value.client_certificate_mode
-      exposed_port               = ingress.value.exposed_port
-      external_enabled           = ingress.value.external_enabled
-      transport                  = ingress.value.transport
-
-      dynamic "traffic_weight" {
-        for_each = ingress.value.traffic_weight
-
-        content {
-          percentage      = traffic_weight.value.percentage
-          label           = traffic_weight.value.label
-          latest_revision = traffic_weight.value.latest_revision
-          revision_suffix = traffic_weight.value.revision_suffix
-        }
-      }
-      dynamic "ip_security_restriction" {
-        for_each = ingress.value.ip_security_restriction == null ? [] : ingress.value.ip_security_restriction
-
-        content {
-          action           = ip_security_restriction.value.action
-          ip_address_range = ip_security_restriction.value.ip_address_range
-          name             = ip_security_restriction.value.name
-          description      = ip_security_restriction.value.description
-        }
-      }
-    }
-  }
-  dynamic "registry" {
-    for_each = var.registries == null ? [] : var.registries
-
-    content {
-      server               = registry.value.server
-      identity             = registry.value.identity
-      password_secret_name = registry.value.password_secret_name
-      username             = registry.value.username
-    }
-  }
-  dynamic "secret" {
-    for_each = nonsensitive(var.secrets) == null ? {} : nonsensitive(var.secrets)
-
-    content {
-      name                = secret.value.name
-      identity            = secret.value.identity
-      key_vault_secret_id = secret.value.key_vault_secret_id
-      value               = sensitive(secret.value.value)
-    }
-  }
   dynamic "timeouts" {
-    for_each = var.container_app_timeouts == null ? [] : [var.container_app_timeouts]
+    for_each = var.timeouts == null ? [] : [var.timeouts]
 
     content {
       create = timeouts.value.create
@@ -306,33 +220,15 @@ resource "azurerm_container_app" "this" {
       update = timeouts.value.update
     }
   }
-}
 
-resource "azurerm_container_app_custom_domain" "this" {
-  for_each = var.custom_domains
-
-  container_app_id                         = azurerm_container_app.this.id
-  name                                     = each.value.name
-  certificate_binding_type                 = each.value.certificate_binding_type
-  container_app_environment_certificate_id = each.value.container_app_environment_certificate_id
-
-  dynamic "timeouts" {
-    for_each = each.value.timeouts == null ? [] : [each.value.timeouts]
-
-    content {
-      create = timeouts.value.create
-      delete = timeouts.value.delete
-      read   = timeouts.value.read
-    }
+  lifecycle {
+    ignore_changes = [
+      body.properties.template.revisionSuffix,
+    ]
   }
 }
 
-# Example resource implementation
-resource "azurerm_management_lock" "this" {
-  count = var.lock != null ? 1 : 0
-
-  lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
-  scope      = azurerm_container_app.this.id
-  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+moved {
+  from = azurerm_container_app.this
+  to   = azapi_resource.container_app
 }
