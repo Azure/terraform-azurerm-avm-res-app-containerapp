@@ -35,18 +35,17 @@ module "container_app" {
       name   = "nginx"
       cpu    = "0.25"
       memory = "0.5Gi"
+      readiness_probes = [{
+        initial_delay_seconds = 5
+        path                  = "/health"
+        period_seconds        = 10
+        port                  = 80
+        transport             = "HTTP"
+      }]
       volume_mounts = [{
         name = "nginx-config"
         path = "/etc/nginx/conf.d"
       }]
-    }]
-    ingress = {
-      external_enabled = true
-      target_port      = 80
-    }
-    secrets = [{
-      name  = "nginx-config"
-      value = local.test_nginx_config
     }]
     volumes = [{
       name         = "nginx-config"
@@ -56,5 +55,15 @@ module "container_app" {
         path        = "default.conf"
       }]
     }]
+  }
+  ingress = {
+    external_enabled = true
+    target_port      = 80
+  }
+  secrets = {
+    nginx_config = {
+      name  = "nginx-config"
+      value = local.test_nginx_config
+    }
   }
 }

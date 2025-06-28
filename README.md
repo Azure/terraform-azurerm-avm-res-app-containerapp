@@ -63,8 +63,10 @@ Type: `string`
 
 ### <a name="input_template"></a> [template](#input\_template)
 
-Description: - `max_replicas` - (Optional) The maximum number of replicas for this container.
+Description: - `cooldown_period` - (Optional) The cooldown period in seconds after a scaling action before another scaling action can be triggered. Defaults to `300`.
+- `max_replicas` - (Optional) The maximum number of replicas for this container.
 - `min_replicas` - (Optional) The minimum number of replicas for this container.
+- `polling_interval` - (Optional) The interval in seconds at which the scaling rules are evaluated. Defaults to `30`.
 - `revision_suffix` - (Optional) The suffix for the revision. This value must be unique for the lifetime of the Resource. If omitted the service will use a hash function to create one.
 
 ---
@@ -208,8 +210,10 @@ Type:
 
 ```hcl
 object({
-    max_replicas                     = optional(number)
+    cooldown_period                  = optional(number, 300)
+    max_replicas                     = optional(number, 10)
     min_replicas                     = optional(number)
+    polling_interval                 = optional(number, 30)
     revision_suffix                  = optional(string)
     termination_grace_period_seconds = optional(number)
 
@@ -1008,6 +1012,14 @@ The following outputs are exported:
 
 Description: The custom domain verification ID for the Container App.
 
+### <a name="output_custom_domains"></a> [custom\_domains](#output\_custom\_domains)
+
+Description: The custom domains configured for the Container App.
+
+### <a name="output_environment_id"></a> [environment\_id](#output\_environment\_id)
+
+Description: The ID of the Container App Environment.
+
 ### <a name="output_fqdn_url"></a> [fqdn\_url](#output\_fqdn\_url)
 
 Description: https url that contains ingress's fqdn, could be used to access the deployed app.
@@ -1015,6 +1027,22 @@ Description: https url that contains ingress's fqdn, could be used to access the
 ### <a name="output_identity"></a> [identity](#output\_identity)
 
 Description: The identities assigned to the Container App.
+
+### <a name="output_latest_ready_revision_name"></a> [latest\_ready\_revision\_name](#output\_latest\_ready\_revision\_name)
+
+Description: The name of the latest ready revision of the Container App.
+
+### <a name="output_latest_revision_fqdn"></a> [latest\_revision\_fqdn](#output\_latest\_revision\_fqdn)
+
+Description: The FQDN of the latest revision of the Container App.
+
+### <a name="output_latest_revision_name"></a> [latest\_revision\_name](#output\_latest\_revision\_name)
+
+Description: The name of the latest revision of the Container App.
+
+### <a name="output_location"></a> [location](#output\_location)
+
+Description: The Azure Region where the Container App is located.
 
 ### <a name="output_name"></a> [name](#output\_name)
 

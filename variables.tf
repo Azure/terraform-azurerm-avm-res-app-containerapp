@@ -28,8 +28,10 @@ variable "resource_group_name" {
 
 variable "template" {
   type = object({
-    max_replicas                     = optional(number)
+    cooldown_period                  = optional(number, 300)
+    max_replicas                     = optional(number, 10)
     min_replicas                     = optional(number)
+    polling_interval                 = optional(number, 30)
     revision_suffix                  = optional(string)
     termination_grace_period_seconds = optional(number)
 
@@ -173,8 +175,10 @@ variable "template" {
     })))
   })
   description = <<-EOT
+ - `cooldown_period` - (Optional) The cooldown period in seconds after a scaling action before another scaling action can be triggered. Defaults to `300`.
  - `max_replicas` - (Optional) The maximum number of replicas for this container.
  - `min_replicas` - (Optional) The minimum number of replicas for this container.
+ - `polling_interval` - (Optional) The interval in seconds at which the scaling rules are evaluated. Defaults to `30`.
  - `revision_suffix` - (Optional) The suffix for the revision. This value must be unique for the lifetime of the Resource. If omitted the service will use a hash function to create one.
 
  ---

@@ -22,7 +22,7 @@ resource "azapi_resource" "container_app" {
             identity  = is.identity
             lifecycle = is.lifecycle
           }
-        ] : null
+        ] : []
         ingress = var.ingress != null ? {
           allowInsecure         = var.ingress.allow_insecure_connections
           clientCertificateMode = var.ingress.client_certificate_mode
@@ -163,8 +163,8 @@ resource "azapi_resource" "container_app" {
           minReplicas = var.template.min_replicas
           maxReplicas = var.template.max_replicas
           # Add missing scale properties
-          cooldownPeriod  = null # TODO add this as direct variable later
-          pollingInterval = null # TODO add this as direct variable later
+          cooldownPeriod  = var.template.cooldown_period
+          pollingInterval = var.template.polling_interval
           rules           = length(local.scale_rules) > 0 ? local.scale_rules : null
         }
         serviceBinds = var.template.service_binds != null ? [
@@ -194,7 +194,13 @@ resource "azapi_resource" "container_app" {
   }
   response_export_values = [
     "identity",
-    "properties.configuration.ingress",
+    "location",
+    "properties.environmentId",
+    "properties.latestRevisionName",
+    "properties.latestReadyRevisionName",
+    "properties.latestRevisionFqdn",
+    "properties.configuration.ingress.customDomains",
+    "properties.configuration.ingress.fqdn",
     "properties.customDomainVerificationId",
     "properties.outboundIpAddresses",
     "properties.revisionSuffix",
