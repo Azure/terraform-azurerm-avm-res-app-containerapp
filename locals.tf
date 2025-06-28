@@ -102,8 +102,7 @@ locals {
       }
     } : {}
   }
-  resource_group_id                  = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
-  role_definition_resource_substring = "providers/Microsoft.Authorization/roleDefinitions"
+  resource_group_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
   scale_rules = setunion(
     var.template.azure_queue_scale_rules != null ? [
       for rule in var.template.azure_queue_scale_rules : {
