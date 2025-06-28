@@ -2,7 +2,11 @@ module "avm_interfaces" {
   source  = "Azure/avm-utl-interfaces/azure"
   version = "0.2.0"
 
-  lock                             = var.lock
+  lock = var.lock
+  managed_identities = {
+    system_assigned            = try(var.managed_identities.system_assigned, false)
+    user_assigned_resource_ids = try(var.managed_identities.user_assigned_resource_ids, [])
+  }
   role_assignment_definition_scope = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
   role_assignments                 = var.role_assignments
 }

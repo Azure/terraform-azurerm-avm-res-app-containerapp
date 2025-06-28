@@ -203,11 +203,11 @@ resource "azapi_resource" "container_app" {
   tags                      = var.tags
 
   dynamic "identity" {
-    for_each = local.managed_identities.system_assigned_user_assigned
+    for_each = module.avm_interfaces.managed_identities_azapi == null ? [0] : [1]
 
     content {
-      type         = identity.value.type
-      identity_ids = identity.value.user_assigned_resource_ids
+      type         = try(module.avm_interfaces.managed_identities_azapi.type, "None")
+      identity_ids = try(module.avm_interfaces.managed_identities_azapi.identity_ids, [])
     }
   }
   dynamic "timeouts" {
