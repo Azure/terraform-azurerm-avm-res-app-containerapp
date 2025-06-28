@@ -28,10 +28,10 @@ resource "azurerm_container_app_environment" "example" {
 }
 
 resource "azurerm_virtual_network" "vnet" {
-  address_space       = ["192.168.0.0/16"]
   location            = var.location
   name                = azurerm_resource_group.test.name
   resource_group_name = azurerm_resource_group.test.name
+  address_space       = ["192.168.0.0/16"]
 }
 
 resource "azurerm_subnet" "subnet" {
@@ -65,9 +65,9 @@ module "counting" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  location                              = azurerm_resource_group.test.location
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
-  revision_mode                         = "Single"
   template = {
     containers = [
       {
@@ -93,6 +93,7 @@ module "counting" {
       percentage      = 100
     }]
   }
+  revision_mode = "Single"
 
   depends_on = [azurerm_private_dns_a_record.containerapp_record, azurerm_private_dns_zone_virtual_network_link.vnet_link]
 }
@@ -101,9 +102,9 @@ module "dashboard" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  location                              = azurerm_resource_group.test.location
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
-  revision_mode                         = "Single"
   template = {
     containers = [
       {
@@ -137,6 +138,7 @@ module "dashboard" {
   managed_identities = {
     system_assigned = true
   }
+  revision_mode = "Single"
 }
 
 # module "container_apps" {
