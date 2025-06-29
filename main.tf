@@ -80,7 +80,7 @@ resource "azapi_resource" "container_app" {
         maxInactiveRevisions = var.max_inactive_revisions
         registries = var.registries != null ? [
           for reg in var.registries : {
-            identity          = reg.identity
+            identity          = reg.identity == null ? "" : reg.identity
             passwordSecretRef = reg.password_secret_name
             server            = reg.server
             username          = reg.username
