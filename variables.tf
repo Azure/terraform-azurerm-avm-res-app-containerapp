@@ -607,7 +607,7 @@ variable "dapr" {
     enabled               = optional(bool, false)
     http_max_request_size = optional(number)
     http_read_buffer_size = optional(number)
-    log_level             = optional(string)
+    log_level             = optional(string, "info")
   })
   default     = null
   description = <<-EOT
