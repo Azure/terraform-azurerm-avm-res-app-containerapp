@@ -29,7 +29,7 @@ resource "azapi_resource" "container_app" {
           exposedPort           = var.ingress.exposed_port
           external              = var.ingress.external_enabled
           targetPort            = var.ingress.target_port
-          transport             = var.ingress.transport
+          transport             = title(var.ingress.transport)
           additionalPortMappings = var.ingress.additional_port_mappings != null ? [
             for apm in var.ingress.additional_port_mappings : {
               exposedPort = apm.exposed_port
