@@ -2,7 +2,7 @@ data "azapi_client_config" "current" {}
 
 locals {
   container_probes = {
-    for cont in var.template.containers : cont.name => setunion(
+    for cont in var.template.containers : cont.name => concat(
 
       try(cont.liveness_probes, []) != null ? [
         for liveness_probe in try(cont.liveness_probes, []) : {
@@ -84,7 +84,7 @@ locals {
     )
   }
   resource_group_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
-  scale_rules = setunion(
+  scale_rules = concat(
     var.template.azure_queue_scale_rules != null ? [
       for rule in var.template.azure_queue_scale_rules : {
         name = rule.name

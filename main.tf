@@ -25,7 +25,7 @@ resource "azapi_resource" "container_app" {
         ] : []
         ingress = var.ingress != null ? {
           allowInsecure         = var.ingress.allow_insecure_connections
-          clientCertificateMode = var.ingress.client_certificate_mode
+          clientCertificateMode = title(var.ingress.client_certificate_mode)
           exposedPort           = var.ingress.exposed_port
           external              = var.ingress.external_enabled
           targetPort            = var.ingress.target_port
