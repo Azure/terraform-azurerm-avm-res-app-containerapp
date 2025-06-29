@@ -16,8 +16,6 @@ locals {
   node_port = 3000
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_resource_group" "this" {
   location = "australiaeast"
   name     = module.naming.resource_group.name_unique
@@ -72,7 +70,7 @@ resource "azapi_resource" "managed_environment" {
 }
 
 resource "azurerm_storage_account" "this" {
-  account_replication_type = "LRS"
+  account_replication_type = "ZRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.this.location
   name                     = module.naming.storage_account.name_unique
@@ -240,7 +238,6 @@ The following resources are used by this module:
 - [azurerm_storage_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
 - [azurerm_storage_container.orders](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_container) (resource)
 - [azurerm_user_assigned_identity.nodeapp](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

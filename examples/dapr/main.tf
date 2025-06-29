@@ -8,8 +8,6 @@ locals {
   node_port = 3000
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_resource_group" "this" {
   location = "australiaeast"
   name     = module.naming.resource_group.name_unique
@@ -64,7 +62,7 @@ resource "azapi_resource" "managed_environment" {
 }
 
 resource "azurerm_storage_account" "this" {
-  account_replication_type = "LRS"
+  account_replication_type = "ZRS"
   account_tier             = "Standard"
   location                 = azurerm_resource_group.this.location
   name                     = module.naming.storage_account.name_unique
