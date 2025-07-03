@@ -14,7 +14,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.35)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -703,6 +703,15 @@ Description: - `allow_insecure_connections` - (Optional) Should this ingress all
 - `transport` - (Optional) The transport method for the Ingress. Possible values are `auto`, `http`, `http2` and `tcp`. Defaults to `auto`.
 
 ---
+`cors` block supports the following:
+- `allowed_origins` - (Required) Specifies the list of origins that are allowed to make cross-origin calls.
+- `allow_credentials_enabled` - (Optional) Whether user credentials are allowed in the cross-origin request is enabled. Defaults to `false`.
+- `allowed_headers` - (Optional) Specifies the list of request headers that are permitted in the actual request.
+- `allowed_methods` - (Optional) Specifies the list of HTTP methods are allowed when accessing the resource in a cross-origin request.
+- `exposed_headers` - (Optional) Specifies the list of headers exposed to the browser in the response to a cross-origin request.
+- `max_age_in_seconds` - (Optional) Specifies the number of seconds that the browser can cache the results of a preflight request.
+
+---
 `custom_domain` block supports the following:
 - `certificate_binding_type` - (Optional) The Binding type. Possible values include `Disabled` and `SniEnabled`. Defaults to `Disabled`.
 - `certificate_id` - (Required) The ID of the Container App Environment Certificate.
@@ -732,6 +741,14 @@ object({
     external_enabled           = optional(bool)
     target_port                = number
     transport                  = optional(string)
+    cors = optional(object({
+      allowed_origins           = list(string)
+      allow_credentials_enabled = optional(bool)
+      allowed_headers           = optional(list(string))
+      allowed_methods           = optional(list(string))
+      exposed_headers           = optional(list(string))
+      max_age_in_seconds        = optional(number)
+    }))
     custom_domain = optional(object({
       certificate_binding_type = optional(string)
       certificate_id           = string

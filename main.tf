@@ -264,6 +264,18 @@ resource "azurerm_container_app" "this" {
           revision_suffix = traffic_weight.value.revision_suffix
         }
       }
+      dynamic "cors" {
+        for_each = ingress.value.cors == null ? [] : [ingress.value.cors]
+
+        content {
+          allow_credentials_enabled = cors.value.allow_credentials_enabled
+          allowed_headers           = cors.value.allowed_headers
+          allowed_methods           = cors.value.allowed_methods
+          allowed_origins           = cors.value.allowed_origins
+          exposed_headers           = cors.value.exposed_headers
+          max_age_in_seconds        = cors.value.max_age_in_seconds
+        }
+      }
       dynamic "ip_security_restriction" {
         for_each = ingress.value.ip_security_restriction == null ? [] : ingress.value.ip_security_restriction
 
