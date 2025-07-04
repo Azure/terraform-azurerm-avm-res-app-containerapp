@@ -36,9 +36,9 @@ module "counting" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  location                              = azurerm_resource_group.test.location
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
-  revision_mode                         = "Single"
   template = {
     containers = [
       {
@@ -52,6 +52,13 @@ module "counting" {
             value = "9001"
           }
         ]
+        readiness_probes = [{
+          initial_delay_seconds = 5
+          path                  = "/health"
+          period_seconds        = 10
+          port                  = 9001
+          transport             = "HTTP"
+        }]
       },
     ]
   }
@@ -84,6 +91,7 @@ module "counting" {
       percentage      = 100
     }]
   }
+  revision_mode = "Single"
   secrets = {
     facebook_secret = {
       name  = "facebook-secret"
@@ -96,9 +104,9 @@ module "dashboard" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  location                              = azurerm_resource_group.test.location
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
-  revision_mode                         = "Single"
   template = {
     containers = [
       {
@@ -116,6 +124,26 @@ module "dashboard" {
             value = "http://${local.counting_app_name}"
           }
         ]
+        liveness_probes = [{
+          initial_delay_seconds = 5
+          path                  = "/health"
+          period_seconds        = 10
+          port                  = 8080
+          transport             = "HTTP"
+        }]
+        startup_probes = [{
+          initial_delay_seconds = 5
+          period_seconds        = 10
+          transport             = "HTTP"
+          path                  = "/health"
+          port                  = 8080
+          header = [
+            {
+              name  = "X-Random-Header"
+              value = "test"
+            }
+          ]
+        }]
       },
     ]
   }
@@ -133,6 +161,7 @@ module "dashboard" {
   managed_identities = {
     system_assigned = true
   }
+  revision_mode = "Single"
 }
 ```
 
@@ -179,6 +208,14 @@ Default: `"eastus"`
 The following outputs are exported:
 
 ### <a name="output_dashboard_url"></a> [dashboard\_url](#output\_dashboard\_url)
+
+Description: n/a
+
+### <a name="output_latest_revision_fqdn"></a> [latest\_revision\_fqdn](#output\_latest\_revision\_fqdn)
+
+Description: n/a
+
+### <a name="output_latest_revision_name"></a> [latest\_revision\_name](#output\_latest\_revision\_name)
 
 Description: n/a
 

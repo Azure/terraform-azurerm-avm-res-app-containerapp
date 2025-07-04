@@ -31,9 +31,9 @@ module "container_apps" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  location                              = azurerm_resource_group.test.location
   name                                  = "app-with-init-container-${random_id.container_name.hex}"
   resource_group_name                   = azurerm_resource_group.test.name
-  revision_mode                         = "Single"
   template = {
     init_containers = [
       {
@@ -84,6 +84,7 @@ module "container_apps" {
       percentage      = 100
     }]
   }
+  revision_mode = "Single"
 }
 ```
 

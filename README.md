@@ -14,8 +14,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
-
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.0)
@@ -25,13 +23,13 @@ The following requirements are needed by this module:
 The following resources are used by this module:
 
 - [azapi_resource.auth_config](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
-- [azurerm_container_app.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app) (resource)
-- [azurerm_container_app_custom_domain.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_custom_domain) (resource)
-- [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
+- [azapi_resource.container_app](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
-- [azurerm_client_config.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
+- [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -45,9 +43,15 @@ Description: The ID of the Container App Environment to host this Container App.
 
 Type: `string`
 
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location.
+
+Type: `string`
+
 ### <a name="input_name"></a> [name](#input\_name)
 
-Description: The name for this Container App.
+Description: The name of the Container App.
 
 Type: `string`
 
@@ -57,16 +61,12 @@ Description: (Required) The name of the resource group in which the Container Ap
 
 Type: `string`
 
-### <a name="input_revision_mode"></a> [revision\_mode](#input\_revision\_mode)
-
-Description: (Required) The revisions operational mode for the Container App. Possible values include `Single` and `Multiple`. In `Single` mode, a single revision is in operation at any given time. In `Multiple` mode, more than one revision can be active at a time and can be configured with load distribution via the `traffic_weight` block in the `ingress` configuration.
-
-Type: `string`
-
 ### <a name="input_template"></a> [template](#input\_template)
 
-Description: - `max_replicas` - (Optional) The maximum number of replicas for this container.
+Description: - `cooldown_period` - (Optional) The cooldown period in seconds after a scaling action before another scaling action can be triggered. Defaults to `300`.
+- `max_replicas` - (Optional) The maximum number of replicas for this container.
 - `min_replicas` - (Optional) The minimum number of replicas for this container.
+- `polling_interval` - (Optional) The interval in seconds at which the scaling rules are evaluated. Defaults to `30`.
 - `revision_suffix` - (Optional) The suffix for the revision. This value must be unique for the lifetime of the Resource. If omitted the service will use a hash function to create one.
 
 ---
@@ -81,7 +81,7 @@ Description: - `max_replicas` - (Optional) The maximum number of replicas for th
 - `trigger_parameter` - (Required) The Trigger Parameter name to use the supply the value retrieved from the `secret_name`.
 
 ---
-`container` block supports the following:
+`containers` block supports the following:
 - `args` - (Optional) A list of extra arguments to pass to the container.
 - `command` - (Optional) A command to pass to the container to override the default. This is provided as a list of command line elements without spaces.
 - `cpu` - (Required) The amount of vCPU to allocate to the container. Possible values include `0.25`, `0.5`, `0.75`, `1.0`, `1.25`, `1.5`, `1.75`, and `2.0`. When there's a workload profile specified, there's no such constraint.
@@ -96,7 +96,7 @@ Description: - `max_replicas` - (Optional) The maximum number of replicas for th
 - `value` - (Optional) The value for this environment variable.
 
 ---
-`liveness_probe` block supports the following:
+`liveness_probes` block supports the following:
 - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
 - `host` - (Optional) The probe hostname. Defaults to the pod IP address. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
 - `initial_delay` - (Optional) The time in seconds to wait after the container has started before the probe is started.
@@ -112,7 +112,7 @@ Description: - `max_replicas` - (Optional) The maximum number of replicas for th
 - `value` - (Required) The HTTP Header value.
 
 ---
-`readiness_probe` block supports the following:
+`readiness_probes` block supports the following:
 - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
 - `host` - (Optional) The probe hostname. Defaults to the pod IP address. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
 - `initial_delay` - (Optional) The number of seconds elapsed after the container has started before the probe is initiated. Possible values are between `0` and `60`. Defaults to `0` seconds.
@@ -129,7 +129,7 @@ Description: - `max_replicas` - (Optional) The maximum number of replicas for th
 - `value` - (Required) The HTTP Header value.
 
 ---
-`startup_probe` block supports the following:
+`startup_probes` block supports the following:
 - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
 - `host` - (Optional) The value for the host header which should be sent with this probe. If unspecified, the IP Address of the Pod is used as the host header. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
 - `initial_delay` - (Optional) The number of seconds elapsed after the container has started before the probe is initiated. Possible values are between `0` and `60`. Defaults to `0` seconds.
@@ -210,13 +210,19 @@ Type:
 
 ```hcl
 object({
-    max_replicas    = optional(number)
-    min_replicas    = optional(number)
-    revision_suffix = optional(string)
+    cooldown_period                  = optional(number, 300)
+    max_replicas                     = optional(number, 10)
+    min_replicas                     = optional(number)
+    polling_interval                 = optional(number, 30)
+    revision_suffix                  = optional(string)
+    termination_grace_period_seconds = optional(number)
+
     azure_queue_scale_rules = optional(list(object({
       name         = string
       queue_length = number
       queue_name   = string
+      account_name = optional(string)
+      identity     = optional(string)
       authentication = list(object({
         secret_name       = string
         trigger_parameter = string
@@ -235,14 +241,15 @@ object({
         value       = optional(string)
       })))
       liveness_probes = optional(list(object({
-        failure_count_threshold = optional(number)
-        host                    = optional(string)
-        initial_delay           = optional(number)
-        interval_seconds        = optional(number)
-        path                    = optional(string)
-        port                    = number
-        timeout                 = optional(number)
-        transport               = string
+        failure_count_threshold          = optional(number)
+        host                             = optional(string)
+        initial_delay                    = optional(number)
+        interval_seconds                 = optional(number)
+        path                             = optional(string)
+        port                             = number
+        termination_grace_period_seconds = optional(number)
+        timeout                          = optional(number)
+        transport                        = string
         header = optional(list(object({
           name  = string
           value = string
@@ -263,29 +270,32 @@ object({
           value = string
         })))
       })))
-      startup_probe = optional(list(object({
-        failure_count_threshold = optional(number)
-        host                    = optional(string)
-        initial_delay           = optional(number)
-        interval_seconds        = optional(number)
-        path                    = optional(string)
-        port                    = number
-        timeout                 = optional(number)
-        transport               = string
+      startup_probes = optional(list(object({
+        failure_count_threshold          = optional(number)
+        host                             = optional(string)
+        initial_delay                    = optional(number)
+        interval_seconds                 = optional(number)
+        path                             = optional(string)
+        port                             = number
+        termination_grace_period_seconds = optional(number)
+        timeout                          = optional(number)
+        transport                        = string
         header = optional(list(object({
           name  = string
           value = string
         })))
       })))
       volume_mounts = optional(list(object({
-        name = string
-        path = string
+        name     = string
+        path     = string
+        sub_path = optional(string)
       })))
     }))
     custom_scale_rules = optional(list(object({
       custom_rule_type = string
       metadata         = map(string)
       name             = string
+      identity         = optional(string)
       authentication = optional(list(object({
         secret_name       = string
         trigger_parameter = string
@@ -294,6 +304,8 @@ object({
     http_scale_rules = optional(list(object({
       concurrent_requests = string
       name                = string
+      identity            = optional(string)
+      metadata            = optional(map(string))
       authentication = optional(list(object({
         secret_name       = string
         trigger_parameter = optional(string)
@@ -312,20 +324,34 @@ object({
         value       = optional(string)
       })))
       volume_mounts = optional(list(object({
-        name = string
-        path = string
+        name     = string
+        path     = string
+        sub_path = optional(string)
       })))
     })))
+
+    service_binds = optional(list(object({
+      name       = string
+      service_id = string
+    })))
+
     tcp_scale_rules = optional(list(object({
       concurrent_requests = string
       name                = string
+      identity            = optional(string)
+      metadata            = optional(map(string))
       authentication = optional(list(object({
         secret_name       = string
         trigger_parameter = optional(string)
       })))
     })))
     volumes = optional(list(object({
-      name         = string
+      mount_options = optional(string)
+      name          = string
+      secrets = optional(list(object({
+        path        = string
+        secret_name = string
+      })))
       storage_name = optional(string)
       storage_type = optional(string)
     })))
@@ -616,68 +642,29 @@ map(object({
 
 Default: `{}`
 
-### <a name="input_container_app_timeouts"></a> [container\_app\_timeouts](#input\_container\_app\_timeouts)
-
-Description: - `create` - (Defaults to 30 minutes) Used when creating the Container App.
-- `delete` - (Defaults to 30 minutes) Used when deleting the Container App.
-- `read` - (Defaults to 5 minutes) Used when retrieving the Container App.
-- `update` - (Defaults to 30 minutes) Used when updating the Container App.
-
-Type:
-
-```hcl
-object({
-    create = optional(string)
-    delete = optional(string)
-    read   = optional(string)
-    update = optional(string)
-  })
-```
-
-Default: `null`
-
-### <a name="input_custom_domains"></a> [custom\_domains](#input\_custom\_domains)
-
-Description: - `certificate_binding_type` - (Optional) The Certificate Binding type. Possible values include `Disabled` and `SniEnabled`.  Required with `container_app_environment_certificate_id`. Changing this forces a new resource to be created.
-- `container_app_environment_certificate_id` - (Optional) The ID of the Container App Environment Certificate to use. Changing this forces a new resource to be created.
-- `name` - (Required) The fully qualified name of the Custom Domain. Must be the CN or a named SAN in the certificate specified by the `container_app_environment_certificate_id`. Changing this forces a new resource to be created.
-
----
-`timeouts` block supports the following:
-- `create` - (Defaults to 30 minutes) Used when creating the Container App.
-- `delete` - (Defaults to 30 minutes) Used when deleting the Container App.
-- `read` - (Defaults to 5 minutes) Used when retrieving the Container App.
-
-Type:
-
-```hcl
-map(object({
-    certificate_binding_type                 = optional(string)
-    container_app_environment_certificate_id = optional(string)
-    name                                     = string
-    timeouts = optional(object({
-      create = optional(string)
-      delete = optional(string)
-      read   = optional(string)
-    }))
-  }))
-```
-
-Default: `{}`
-
 ### <a name="input_dapr"></a> [dapr](#input\_dapr)
 
-Description: - `app_id` - (Required) The Dapr Application Identifier.
+Description: - `app_id` - (Optional) The Dapr Application Identifier.
 - `app_port` - (Optional) The port which the application is listening on. This is the same as the `ingress` port.
 - `app_protocol` - (Optional) The protocol for the app. Possible values include `http` and `grpc`. Defaults to `http`.
+- `enable_api_logging` - (Optional) Enable API logging. Defaults to `false`.
+- `enabled` - (Optional) Enable Dapr for the application. Defaults to `false`.
+- `http_max_request_size` - (Optional) The maximum allowed HTTP request size in bytes.
+- `http_read_buffer_size` - (Optional) The size of the buffer used for reading the HTTP request body in bytes.
+- `log_level` - (Optional) The log level for Dapr. Possible values include "debug", "info", "warn", "error", and "fatal".
 
 Type:
 
 ```hcl
 object({
-    app_id       = string
-    app_port     = optional(number)
-    app_protocol = optional(string)
+    app_id                = optional(string)
+    app_port              = optional(number)
+    app_protocol          = optional(string, "http")
+    enable_api_logging    = optional(bool, false)
+    enabled               = optional(bool, false)
+    http_max_request_size = optional(number)
+    http_read_buffer_size = optional(number)
+    log_level             = optional(string, "info")
   })
 ```
 
@@ -686,69 +673,128 @@ Default: `null`
 ### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
 
 Description: This variable controls whether or not telemetry is enabled for the module.  
-For more information see <https://aka.ms/avm/telemetryinfo>.  
+For more information see https://aka.ms/avm/telemetryinfo.  
 If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
-Default: `true`
+Default: `false`
+
+### <a name="input_identity_settings"></a> [identity\_settings](#input\_identity\_settings)
+
+Description: A list of identity settings for the Container App.
+
+---
+`identity_settings` block supports the following:
+- `identity` - (Required) The resource ID of the user-assigned managed identity.
+- `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, and `Retain`.
+
+Type:
+
+```hcl
+list(object({
+    identity  = string
+    lifecycle = string
+  }))
+```
+
+Default: `null`
 
 ### <a name="input_ingress"></a> [ingress](#input\_ingress)
 
-Description: - `allow_insecure_connections` - (Optional) Should this ingress allow insecure connections?
-- `client_certificate_mode` - (Optional) The client certificate mode for the Ingress. Possible values are `require`, `accept`, and `ignore`.
-- `exposed_port` - (Optional) The exposed port on the container for the Ingress traffic.
+Description:   
+This object defines the ingress properties for the container app:
+
+- `allow_insecure_connections` - (Optional) Should this ingress allow insecure connections? Defaults to `false`.
+- `client_certificate_mode` - (Optional) The mode for client certificate authentication. Possible values include `optional` and `required`. Defaults to `Ignore`.
+- `exposed_port` - (Optional) The exposed port on the container for the Ingress traffic. Defaults to `0`.
 - `external_enabled` - (Optional) Are connections to this Ingress from outside the Container App Environment enabled? Defaults to `false`.
-- `target_port` - (Required) The target port on the container for the Ingress traffic.
-- `transport` - (Optional) The transport method for the Ingress. Possible values are `auto`, `http`, `http2` and `tcp`. Defaults to `auto`.
+- `target_port` - (Required) The target port on the container for the Ingress traffic. Defaults to `Auto`.
+- `transport` - (Optional) The transport method for the Ingress. Possible values include `auto`, `http`, `http2`, and `tcp`. Defaults to `Auto`.
+
+---
+`cors_policy` block supports the following:
+- `allow_credentials` - (Optional) Indicates whether the browser should include credentials when making a request. Defaults to `false`.
+- `allowed_headers` - (Optional) List of headers that can be used when making the actual request.
+- `allowed_methods` - (Optional) List of HTTP methods that can be used when making the actual request.
+- `allowed_origins` - (Optional) List of origins that are allowed to access the resource.
+- `expose_headers` - (Optional) List of response headers that can be exposed when making the actual request.
+- `max_age` - (Optional) The maximum number of seconds the results of a preflight request can be cached.
 
 ---
 `custom_domain` block supports the following:
 - `certificate_binding_type` - (Optional) The Binding type. Possible values include `Disabled` and `SniEnabled`. Defaults to `Disabled`.
-- `certificate_id` - (Required) The ID of the Container App Environment Certificate.
-- `name` - (Required) The hostname of the Certificate. Must be the CN or a named SAN in the certificate.
+- `certificate_id` - (Optional) The ID of the Container App Environment Certificate.
+- `name` - (Optional) The hostname of the Certificate. Must be the CN or a named SAN in the certificate.
 
 ---
-`ip_security_restriction` block supports the following:
-- `action` - (Required) The IP-filter action. `Allow` or `Deny`.
-- `description` - (Optional) Describe the IP restriction rule that is being sent to the container-app.
-- `ip_address_range` - (Required) The incoming IP address or range of IP addresses (in CIDR notation).
-- `name` - (Required) Name for the IP restriction rule.
+`ip_restrictions` block supports the following:
+- `action` - (Optional) The action to take when the IP security restriction is triggered. Possible values include `allow` and `deny`.
+- `description` - (Optional) A description for the IP security restriction.
+- `ip_range` - (Optional) The IP address range for the security restriction.
+- `name` - (Optional) The name for the IP security restriction.
+
+---
+`sticky_sessions` block supports the following:
+- `affinity` - (Optional) The affinity type for sticky sessions. Possible values include `None`, `ClientIP`, and `Server`.
 
 ---
 `traffic_weight` block supports the following:
 - `label` - (Optional) The label to apply to the revision as a name prefix for routing traffic.
-- `latest_revision` - (Optional) This traffic Weight applies to the latest stable Container Revision. At most only one `traffic_weight` block can have the `latest_revision` set to `true`.
-- `percentage` - (Required) The percentage of traffic which should be sent this revision.
+- `latest_revision` - (Optional) This traffic Weight relates to the latest stable Container Revision.
 - `revision_suffix` - (Optional) The suffix string to which this `traffic_weight` applies.
+- `percentage` - (Required) The percentage of traffic which should be sent according to this configuration.
 
 Type:
 
 ```hcl
 object({
-    allow_insecure_connections = optional(bool)
-    client_certificate_mode    = optional(string)
-    exposed_port               = optional(number)
-    external_enabled           = optional(bool)
-    target_port                = number
-    transport                  = optional(string)
+    allow_insecure_connections = optional(bool, false)
+    client_certificate_mode    = optional(string, "Ignore")
+    exposed_port               = optional(number, 0)
+    external_enabled           = optional(bool, false)
+    target_port                = optional(number)
+    transport                  = optional(string, "Auto")
+
+    additional_port_mappings = optional(list(object({
+      exposed_port = number
+      external     = bool
+      target_port  = number
+    })))
+
+    cors_policy = optional(object({
+      allow_credentials = optional(bool, false)
+      allowed_headers   = optional(list(string))
+      allowed_methods   = optional(list(string))
+      allowed_origins   = optional(list(string))
+      expose_headers    = optional(list(string))
+      max_age           = optional(number)
+    }), null)
+
     custom_domain = optional(object({
       certificate_binding_type = optional(string)
-      certificate_id           = string
-      name                     = string
+      certificate_id           = optional(string)
+      name                     = optional(string)
     }))
-    ip_security_restriction = optional(list(object({
-      action           = string
-      description      = optional(string)
-      ip_address_range = string
-      name             = string
+
+    ip_restrictions = optional(list(object({
+      action      = optional(string)
+      description = optional(string)
+      ip_range    = optional(string)
+      name        = optional(string)
     })))
-    traffic_weight = list(object({
-      label           = optional(string)
-      latest_revision = optional(bool)
-      percentage      = number
-      revision_suffix = optional(string)
+
+    sticky_sessions = optional(object({
+      affinity = optional(string, "none")
     }))
+
+    traffic_weight = optional(list(object({
+      label           = optional(string)
+      latest_revision = optional(bool, true)
+      revision_suffix = optional(string)
+      percentage      = optional(number, 100)
+    })))
+
   })
 ```
 
@@ -774,10 +820,10 @@ Default: `null`
 
 ### <a name="input_managed_identities"></a> [managed\_identities](#input\_managed\_identities)
 
-Description:   Controls the Managed Identity configuration on this resource. The following properties can be specified:
+Description: Configurations for managed identities in Azure. This variable allows you to specify both system-assigned and user-assigned managed identities for resources that support identity-based authentication.
 
-  - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
-  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
+- `system_assigned` - (Optional) A boolean flag indicating whether to enable the system-assigned managed identity. Defaults to `false`.
+- `user_assigned_resource_ids` - (Optional) A set of user-assigned managed identity resource IDs to be associated with the resource.
 
 Type:
 
@@ -790,12 +836,21 @@ object({
 
 Default: `{}`
 
+### <a name="input_max_inactive_revisions"></a> [max\_inactive\_revisions](#input\_max\_inactive\_revisions)
+
+Description: (Optional). Max inactive revisions a Container App can have.
+
+Type: `number`
+
+Default: `2`
+
 ### <a name="input_registries"></a> [registries](#input\_registries)
 
-Description: - `identity` - (Optional) Resource ID for the User Assigned Managed identity to use when pulling from the Container Registry.
-- `password_secret_name` - (Optional) The name of the Secret Reference containing the password value for this user on the Container Registry, `username` must also be supplied.
-- `server` - (Required) The hostname for the Container Registry.
-- `username` - (Optional) The username to use for this Container Registry, `password_secret_name` must also be supplied..
+Description:
+- `identity` - (Optional) Resource ID for the User Assigned Managed identity to use when pulling from the Container Registry.
+- `password_secret_name ` - (Optional) The name of the Secret Reference containing the password value for this user on the Container Registry, `username` must also be supplied.
+- `server` - (Optional) The hostname for the Container Registry.
+- `username` - (Optional) The username to use for this Container Registry, `password_secret_name` must also be supplied.
 
 Type:
 
@@ -803,12 +858,20 @@ Type:
 list(object({
     identity             = optional(string)
     password_secret_name = optional(string)
-    server               = string
+    server               = optional(string)
     username             = optional(string)
   }))
 ```
 
 Default: `null`
+
+### <a name="input_revision_mode"></a> [revision\_mode](#input\_revision\_mode)
+
+Description: (Required) The revisions operational mode for the Container App. Possible values include `Single` and `Multiple`. In `Single` mode, a single revision is in operation at any given time. In `Multiple` mode, more than one revision can be active at a time and can be configured with load distribution via the `traffic_weight` block in the `ingress` configuration.
+
+Type: `string`
+
+Default: `"Single"`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
@@ -842,12 +905,37 @@ map(object({
 
 Default: `{}`
 
+### <a name="input_runtime"></a> [runtime](#input\_runtime)
+
+Description: Runtime configuration for the Container App.
+
+---
+`runtime` block supports the following:
+- `java` - (Optional) Java runtime configuration.
+
+---
+`java` block supports the following:
+- `enable_metrics` - (Optional) Whether to enable Java metrics collection. Defaults to `false`.
+
+Type:
+
+```hcl
+object({
+    java = optional(object({
+      enable_metrics = optional(bool, false)
+    }))
+  })
+```
+
+Default: `null`
+
 ### <a name="input_secrets"></a> [secrets](#input\_secrets)
 
-Description: - `identity` - (Optional) The identity to use for accessing the Key Vault secret reference. This can either be the Resource ID of a User Assigned Identity, or `System` for the System Assigned Identity.
-- `key_vault_secret_id` - (Optional) The ID of a Key Vault secret. This can be a versioned or version-less ID.
+Description:
+- `key_vault_secret_id` - (Optional) The URL of the Azure Key Vault containing the secret. Required when `identity` is specified.
+- `identity` - (Optional) The identity associated with the secret.
 - `name` - (Required) The secret name.
-- `value` - (Optional) The value for this secret.
+- `value` - (Required) The value for this secret.
 
 Type:
 
@@ -856,23 +944,61 @@ map(object({
     identity            = optional(string)
     key_vault_secret_id = optional(string)
     name                = string
-    value               = optional(string)
+    value               = string
   }))
+```
+
+Default: `null`
+
+### <a name="input_service"></a> [service](#input\_service)
+
+Description: Service configuration for the Container App.
+
+---
+`service` block supports the following:
+- `type` - (Required) The type of service. Possible values include service types supported by Azure Container Apps.
+
+Type:
+
+```hcl
+object({
+    type = string
+  })
 ```
 
 Default: `null`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
-Description: (Optional) A mapping of tags to assign to the Container App.
+Description: Custom tags to apply to the resource.
 
 Type: `map(string)`
 
 Default: `null`
 
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: - `create` - (Defaults to 30 minutes) Used when creating the Container App.
+- `delete` - (Defaults to 30 minutes) Used when deleting the Container App.
+- `read` - (Defaults to 5 minutes) Used when retrieving the Container App.
+- `update` - (Defaults to 30 minutes) Used when updating the Container App.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    delete = optional(string)
+    read   = optional(string)
+    update = optional(string)
+  })
+```
+
+Default: `null`
+
 ### <a name="input_workload_profile_name"></a> [workload\_profile\_name](#input\_workload\_profile\_name)
 
-Description: (Optional) The name of the Workload Profile in the Container App Environment to place this Container App.
+Description: Workload profile name to pin for container app execution.  If not set, workload profiles are not used.
 
 Type: `string`
 
@@ -882,21 +1008,63 @@ Default: `null`
 
 The following outputs are exported:
 
+### <a name="output_custom_domain_verification_id"></a> [custom\_domain\_verification\_id](#output\_custom\_domain\_verification\_id)
+
+Description: The custom domain verification ID for the Container App.
+
+### <a name="output_custom_domains"></a> [custom\_domains](#output\_custom\_domains)
+
+Description: The custom domains configured for the Container App.
+
+### <a name="output_environment_id"></a> [environment\_id](#output\_environment\_id)
+
+Description: The ID of the Container App Environment.
+
 ### <a name="output_fqdn_url"></a> [fqdn\_url](#output\_fqdn\_url)
 
 Description: https url that contains ingress's fqdn, could be used to access the deployed app.
 
-### <a name="output_resource"></a> [resource](#output\_resource)
+### <a name="output_identity"></a> [identity](#output\_identity)
 
-Description: `azurerm_container_app` resource created by this module.
+Description: The identities assigned to the Container App.
+
+### <a name="output_latest_ready_revision_name"></a> [latest\_ready\_revision\_name](#output\_latest\_ready\_revision\_name)
+
+Description: The name of the latest ready revision of the Container App.
+
+### <a name="output_latest_revision_fqdn"></a> [latest\_revision\_fqdn](#output\_latest\_revision\_fqdn)
+
+Description: The FQDN of the latest revision of the Container App.
+
+### <a name="output_latest_revision_name"></a> [latest\_revision\_name](#output\_latest\_revision\_name)
+
+Description: The name of the latest revision of the Container App.
+
+### <a name="output_location"></a> [location](#output\_location)
+
+Description: The Azure Region where the Container App is located.
+
+### <a name="output_name"></a> [name](#output\_name)
+
+Description: The name of the Container App.
+
+### <a name="output_outbound_ip_addresses"></a> [outbound\_ip\_addresses](#output\_outbound\_ip\_addresses)
+
+Description: The outbound IP addresses of the Container App.
 
 ### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
 
-Description: Resource ID of `azurerm_container_app` resource created by this module.
+Description: Resource ID of container app resource created by this module.
 
 ## Modules
 
-No modules.
+The following Modules are called:
+
+### <a name="module_avm_interfaces"></a> [avm\_interfaces](#module\_avm\_interfaces)
+
+Source: Azure/avm-utl-interfaces/azure
+
+Version: 0.2.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
