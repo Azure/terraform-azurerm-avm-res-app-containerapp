@@ -2,7 +2,8 @@ module "avm_interfaces" {
   source  = "Azure/avm-utl-interfaces/azure"
   version = "0.2.0"
 
-  lock = var.lock
+  enable_telemetry = var.enable_telemetry
+  lock             = var.lock
   managed_identities = {
     system_assigned            = try(var.managed_identities.system_assigned, false)
     user_assigned_resource_ids = try(var.managed_identities.user_assigned_resource_ids, [])
