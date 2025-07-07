@@ -4,7 +4,7 @@ locals {
   container_probes = {
     for cont in var.template.containers : cont.name => concat(
 
-      try(cont.liveness_probes, []) != null ? [
+      try(length(cont.liveness_probes) > 0, false) ? [
         for liveness_probe in try(cont.liveness_probes, []) : {
           failureThreshold              = liveness_probe.failure_count_threshold
           initialDelaySeconds           = liveness_probe.initial_delay
@@ -30,7 +30,7 @@ locals {
           } : null
       }] : [],
 
-      try(cont.readiness_probes, []) != null ? [
+      try(length(cont.readiness_probes) > 0, false) ? [
         for readiness_probe in try(cont.readiness_probes, []) : {
           failureThreshold    = readiness_probe.failure_count_threshold
           initialDelaySeconds = readiness_probe.initial_delay
@@ -56,7 +56,7 @@ locals {
           } : null
       }] : [],
 
-      try(cont.startup_probes, []) != null ? [
+      try(length(cont.startup_probes) > 0, false) ? [
         for startup_probe in try(cont.startup_probes, []) : {
           failureThreshold              = startup_probe.failure_count_threshold
           initialDelaySeconds           = startup_probe.initial_delay
@@ -80,7 +80,7 @@ locals {
             host = startup_probe.host
             port = startup_probe.port
           } : null
-      }] : []
+      }] : [],
     )
   }
   resource_group_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"

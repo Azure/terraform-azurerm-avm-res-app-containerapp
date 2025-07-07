@@ -59,14 +59,14 @@ variable "template" {
         value       = optional(string)
       })))
       liveness_probes = optional(list(object({
-        failure_count_threshold          = optional(number)
+        failure_count_threshold          = optional(number, 3)
         host                             = optional(string)
-        initial_delay                    = optional(number)
-        interval_seconds                 = optional(number)
+        initial_delay                    = optional(number, 1)
+        interval_seconds                 = optional(number, 10)
         path                             = optional(string)
         port                             = number
         termination_grace_period_seconds = optional(number)
-        timeout                          = optional(number)
+        timeout                          = optional(number, 1)
         transport                        = string
         header = optional(list(object({
           name  = string
@@ -74,14 +74,14 @@ variable "template" {
         })))
       })))
       readiness_probes = optional(list(object({
-        failure_count_threshold = optional(number)
+        failure_count_threshold = optional(number, 3)
         host                    = optional(string)
-        initial_delay           = optional(number)
-        interval_seconds        = optional(number)
+        initial_delay           = optional(number, 0)
+        interval_seconds        = optional(number, 10)
         path                    = optional(string)
         port                    = number
-        success_count_threshold = optional(number)
-        timeout                 = optional(number)
+        success_count_threshold = optional(number, 3)
+        timeout                 = optional(number, 1)
         transport               = string
         header = optional(list(object({
           name  = string
@@ -89,14 +89,14 @@ variable "template" {
         })))
       })))
       startup_probes = optional(list(object({
-        failure_count_threshold          = optional(number)
+        failure_count_threshold          = optional(number, 3)
         host                             = optional(string)
-        initial_delay                    = optional(number)
-        interval_seconds                 = optional(number)
+        initial_delay                    = optional(number, 0)
+        interval_seconds                 = optional(number, 10)
         path                             = optional(string)
         port                             = number
         termination_grace_period_seconds = optional(number)
-        timeout                          = optional(number)
+        timeout                          = optional(number, 1)
         transport                        = string
         header = optional(list(object({
           name  = string
@@ -782,7 +782,7 @@ DESCRIPTION
 
 variable "max_inactive_revisions" {
   type        = number
-  default     = 2
+  default     = 0
   description = "(Optional). Max inactive revisions a Container App can have."
 }
 

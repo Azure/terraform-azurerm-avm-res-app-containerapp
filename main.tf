@@ -1,3 +1,8 @@
+moved {
+  from = azurerm_container_app.this
+  to   = azapi_resource.container_app
+}
+
 resource "azapi_resource" "container_app" {
   location  = var.location
   name      = var.name
@@ -24,6 +29,7 @@ resource "azapi_resource" "container_app" {
           }
         ] : []
         ingress = var.ingress != null ? {
+          targetPortHttpScheme = null
           allowInsecure         = var.ingress.allow_insecure_connections
           clientCertificateMode = title(var.ingress.client_certificate_mode)
           exposedPort           = var.ingress.exposed_port
@@ -38,12 +44,14 @@ resource "azapi_resource" "container_app" {
             }
           ] : null
           corsPolicy = var.ingress.cors_policy != null ? {
-            allowCredentials = var.ingress.cors_policy.allow_credentials
-            allowedHeaders   = var.ingress.cors_policy.allowed_headers
-            allowedMethods   = var.ingress.cors_policy.allowed_methods
-            allowedOrigins   = var.ingress.cors_policy.allowed_origins
-            exposeHeaders    = var.ingress.cors_policy.expose_headers
-            maxAge           = var.ingress.cors_policy.max_age
+            for k, v in {
+              allowCredentials = var.ingress.cors_policy.allow_credentials
+              allowedHeaders   = var.ingress.cors_policy.allowed_headers
+              allowedMethods   = var.ingress.cors_policy.allowed_methods
+              allowedOrigins   = var.ingress.cors_policy.allowed_origins
+              exposeHeaders    = var.ingress.cors_policy.expose_headers
+              maxAge           = var.ingress.cors_policy.max_age
+            } : k => v if v != null
           } : null
           customDomains = var.ingress.custom_domain != null ? [
             {
@@ -104,17 +112,19 @@ resource "azapi_resource" "container_app" {
         } : null
       }
       environmentId = var.container_app_environment_resource_id
+      managedEnvironmentId = var.container_app_environment_resource_id
       template = {
         containers = [
-          for cont in var.template.containers : {
+          for cont in var.template.containers : { for k, v in {
+            imageType = "ContainerImage"
             args    = cont.args
             command = cont.command
             env = cont.env != null ? [
-              for e in cont.env : {
+              for e in cont.env : { for k, v in {
                 name      = e.name
                 secretRef = e.secret_name
                 value     = e.value
-              }
+              } : k => v if v != null }
             ] : null
             image  = cont.image
             name   = cont.name
@@ -130,48 +140,48 @@ resource "azapi_resource" "container_app" {
                 volumeName = vm.name
               }
             ] : null
-          }
+          } : k => v if v != null }
         ]
         initContainers = var.template.init_containers != null ? [
           for init_cont in var.template.init_containers : {
             args    = init_cont.args
             command = init_cont.command
             env = init_cont.env != null ? [
-              for e in init_cont.env : {
+              for e in init_cont.env : { for k, v in {
                 name      = e.name
                 secretRef = e.secret_name
                 value     = e.value
-              }
+              } : k => v if v != null }
             ] : null
             image = init_cont.image
             name  = init_cont.name
-            resources = {
+            resources = { for k, v in {
               cpu    = init_cont.cpu
               memory = init_cont.memory
-            }
+            } : k => v if v != null }
             volumeMounts = init_cont.volume_mounts != null ? [
-              for vm in init_cont.volume_mounts : {
+              for vm in init_cont.volume_mounts : { for k, v in {
                 mountPath  = vm.path
                 subPath    = vm.sub_path
                 volumeName = vm.name
-              }
+              } : k => v if v != null }
             ] : null
           }
         ] : null
         revisionSuffix = var.template.revision_suffix
-        scale = {
+        scale = { for k, v in {
           minReplicas = var.template.min_replicas
           maxReplicas = var.template.max_replicas
           # Add missing scale properties
           cooldownPeriod  = var.template.cooldown_period
           pollingInterval = var.template.polling_interval
           rules           = length(local.scale_rules) > 0 ? local.scale_rules : null
-        }
+        } : k => v if v != null }
         serviceBinds = var.template.service_binds != null ? [
-          for sb in var.template.service_binds : {
+          for sb in var.template.service_binds : { for k, v in {
             name      = sb.name
             serviceId = sb.service_id
-          }
+          } : k => v if v != null }
         ] : null
         terminationGracePeriodSeconds = var.template.termination_grace_period_seconds
         volumes = var.template.volumes != null ? [
@@ -187,25 +197,13 @@ resource "azapi_resource" "container_app" {
               }
             ] : null
           }
-        ] : null
+        ] : []
       }
       workloadProfileName = var.workload_profile_name
     }
   }
-  response_export_values = [
-    "identity",
-    "location",
-    "properties.environmentId",
-    "properties.latestRevisionName",
-    "properties.latestReadyRevisionName",
-    "properties.latestRevisionFqdn",
-    "properties.configuration.ingress.customDomains",
-    "properties.configuration.ingress.fqdn",
-    "properties.customDomainVerificationId",
-    "properties.outboundIpAddresses",
-    "properties.revisionSuffix",
-  ]
-  schema_validation_enabled = true
+  # response_export_values    = ["*"]
+  schema_validation_enabled = false
   tags                      = var.tags
 
   dynamic "identity" {
@@ -230,11 +228,8 @@ resource "azapi_resource" "container_app" {
   lifecycle {
     ignore_changes = [
       body.properties.template.revisionSuffix,
+      body.properties.managedEnvironmentId,
+      schema_validation_enabled,
     ]
   }
-}
-
-moved {
-  from = azurerm_container_app.this
-  to   = azapi_resource.container_app
 }

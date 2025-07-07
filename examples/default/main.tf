@@ -27,6 +27,8 @@ resource "azurerm_container_app_environment" "example" {
 }
 
 module "counting" {
+  # source  = "Azure/avm-res-app-containerapp/azurerm"
+  # version = "0.6.0"
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
@@ -94,13 +96,30 @@ module "counting" {
   }
 }
 
+output "mod1" {
+  value = {
+    fqdn_url = module.counting.fqdn_url
+    resource_id = module.counting.resource_id
+  }
+}
+
+output "mod2" {
+  value = {
+    fqdn_url = module.dashboard.fqdn_url
+    resource_id = module.dashboard.resource_id
+  }
+}
+
 module "dashboard" {
+  # source  = "Azure/avm-res-app-containerapp/azurerm"
+  # version = "0.6.0"
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
   location                              = azurerm_resource_group.test.location
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
+  enable_telemetry = false
   template = {
     containers = [
       {
