@@ -4,12 +4,6 @@ variable "container_app_environment_resource_id" {
   nullable    = false
 }
 
-variable "location" {
-  type        = string
-  description = "Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location."
-  nullable    = false
-}
-
 variable "name" {
   type        = string
   description = "The name of the Container App."
@@ -76,7 +70,7 @@ variable "template" {
       readiness_probes = optional(list(object({
         failure_count_threshold = optional(number, 3)
         host                    = optional(string)
-        initial_delay           = optional(number, 0)
+        initial_delay           = optional(number)
         interval_seconds        = optional(number, 10)
         path                    = optional(string)
         port                    = number
@@ -88,10 +82,26 @@ variable "template" {
           value = string
         })))
       })))
+      #TODO:Remove startup_probe in v1.0.0
+      startup_probe = optional(list(object({
+        failure_count_threshold          = optional(number, 3)
+        host                             = optional(string)
+        initial_delay                    = optional(number)
+        interval_seconds                 = optional(number, 10)
+        path                             = optional(string)
+        port                             = number
+        termination_grace_period_seconds = optional(number)
+        timeout                          = optional(number, 1)
+        transport                        = string
+        header = optional(list(object({
+          name  = string
+          value = string
+        })))
+      })))
       startup_probes = optional(list(object({
         failure_count_threshold          = optional(number, 3)
         host                             = optional(string)
-        initial_delay                    = optional(number, 0)
+        initial_delay                    = optional(number)
         interval_seconds                 = optional(number, 10)
         path                             = optional(string)
         port                             = number
@@ -240,6 +250,17 @@ variable "template" {
  - `name` - (Required) The HTTP Header Name.
  - `value` - (Required) The HTTP Header value.
 
+---
+ `startup_probe` block has been deprecated and would be removed in `v1`, please use `startup_probes` instead!. `startup_probe` block supports the following:
+ - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
+ - `host` - (Optional) The value for the host header which should be sent with this probe. If unspecified, the IP Address of the Pod is used as the host header. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
+ - `initial_delay` - (Optional) The number of seconds elapsed after the container has started before the probe is initiated. Possible values are between `0` and `60`. Defaults to `0` seconds.
+ - `interval_seconds` - (Optional) How often, in seconds, the probe should run. Possible values are between `1` and `240`. Defaults to `10`
+ - `path` - (Optional) The URI to use with the `host` for http type probes. Not valid for `TCP` type probes. Defaults to `/`.
+ - `port` - (Required) The port number on which to connect. Possible values are between `1` and `65535`.
+ - `timeout` - (Optional) Time in seconds after which the probe times out. Possible values are in the range `1`
+ - `transport` - (Required) Type of probe. Possible values are `TCP`, `HTTP`, and `HTTPS`.
+
  ---
  `startup_probes` block supports the following:
  - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
@@ -319,6 +340,11 @@ variable "template" {
  - `storage_type` - (Optional) The type of storage volume. Possible values are `AzureFile`, `EmptyDir` and `Secret`. Defaults to `EmptyDir`.
 EOT
   nullable    = false
+
+  validation {
+    condition     = alltrue([for c in var.template.containers : c.startup_probe == null || c.startup_probes == null])
+    error_message = "You can only use either `startup_probe` or `startup_probes` in the `containers` block, not both. The `startup_probe` block has been deprecated and would be removed in v1."
+  }
 }
 
 variable "auth_configs" {
@@ -624,12 +650,13 @@ variable "dapr" {
 
 variable "enable_telemetry" {
   type        = bool
-  default     = false
+  default     = true
   description = <<DESCRIPTION
 This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
+For more information see <https://aka.ms/avm/telemetryinfo>.
 If it is set to false, then no telemetry will be collected.
 DESCRIPTION
+  nullable    = false
 }
 
 variable "identity_settings" {
@@ -743,6 +770,13 @@ This object defines the ingress properties for the container app:
 - `percentage` - (Required) The percentage of traffic which should be sent according to this configuration.
 
 DESCRIPTION
+}
+
+variable "location" {
+  type = string
+  #TODO:Remove default value in v1.0.0
+  default     = null
+  description = "Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location. This variable would be required in v1.0.0."
 }
 
 # required AVM interfaces
@@ -875,6 +909,13 @@ variable "secrets" {
  - `value` - (Required) The value for this secret.
 
 EOT
+}
+
+variable "secrets_version" {
+  type        = number
+  default     = 0
+  description = "version number for the secrets. When we need to trigger an update on secrets, we must set this version number to a different value. Defaults to 0."
+  nullable    = false
 }
 
 variable "service" {

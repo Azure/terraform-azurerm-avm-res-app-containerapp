@@ -32,11 +32,12 @@ resource "azurerm_container_app_environment" "example" {
   resource_group_name = azurerm_resource_group.test.name
 }
 
+data "azurerm_client_config" "this" {}
+
 module "counting" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  location                              = azurerm_resource_group.test.location
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -91,6 +92,7 @@ module "counting" {
       percentage      = 100
     }]
   }
+  location      = azurerm_resource_group.test.location
   revision_mode = "Single"
   secrets = {
     facebook_secret = {
@@ -98,13 +100,16 @@ module "counting" {
       value = "very_secret"
     }
   }
+
+  depends_on = [
+    azurerm_resource_group.test,
+  ]
 }
 
 module "dashboard" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  location                              = azurerm_resource_group.test.location
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -131,7 +136,7 @@ module "dashboard" {
           port                  = 8080
           transport             = "HTTP"
         }]
-        startup_probes = [{
+        startup_probe = [{
           initial_delay_seconds = 5
           period_seconds        = 10
           transport             = "HTTP"
@@ -147,6 +152,7 @@ module "dashboard" {
       },
     ]
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = false
     client_certificate_mode    = "ignore"
@@ -158,10 +164,15 @@ module "dashboard" {
       percentage      = 100
     }]
   }
+  location = azurerm_resource_group.test.location
   managed_identities = {
     system_assigned = true
   }
   revision_mode = "Single"
+
+  depends_on = [
+    azurerm_resource_group.test,
+  ]
 }
 ```
 
@@ -185,6 +196,7 @@ The following resources are used by this module:
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.env_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
+- [azurerm_client_config.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -209,15 +221,7 @@ The following outputs are exported:
 
 ### <a name="output_dashboard_url"></a> [dashboard\_url](#output\_dashboard\_url)
 
-Description: n/a
-
-### <a name="output_latest_revision_fqdn"></a> [latest\_revision\_fqdn](#output\_latest\_revision\_fqdn)
-
-Description: n/a
-
-### <a name="output_latest_revision_name"></a> [latest\_revision\_name](#output\_latest\_revision\_name)
-
-Description: n/a
+Description: output "latest\_revision\_fqdn" { value = module.dashboard.latest\_revision\_fqdn }  output "latest\_revision\_name" { value = module.dashboard.latest\_revision\_name }
 
 ## Modules
 

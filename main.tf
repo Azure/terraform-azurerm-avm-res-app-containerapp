@@ -1,10 +1,22 @@
+locals {
+  sensitive_body_present = try(nonsensitive(anytrue([for item in local.sensitive_inputs : item != null])), false)
+  sensitive_inputs = [
+    var.secrets
+  ]
+}
+
 moved {
   from = azurerm_container_app.this
   to   = azapi_resource.container_app
 }
 
+data "azapi_resource" "rg" {
+  name = var.resource_group_name
+  type = "Microsoft.Resources/resourceGroups@2024-11-01"
+}
+
 resource "azapi_resource" "container_app" {
-  location  = var.location
+  location  = local.main_location
   name      = var.name
   parent_id = local.resource_group_id
   type      = "Microsoft.App/containerApps@2025-01-01"
@@ -29,7 +41,6 @@ resource "azapi_resource" "container_app" {
           }
         ] : []
         ingress = var.ingress != null ? {
-          targetPortHttpScheme = null
           allowInsecure         = var.ingress.allow_insecure_connections
           clientCertificateMode = title(var.ingress.client_certificate_mode)
           exposedPort           = var.ingress.exposed_port
@@ -99,24 +110,15 @@ resource "azapi_resource" "container_app" {
             enableMetrics = var.runtime.java.enable_metrics
           } : null
         } : null
-        secrets = var.secrets != null ? [
-          for s in var.secrets : {
-            identity    = s.identity
-            keyVaultUrl = s.key_vault_secret_id
-            name        = s.name
-            value       = s.value
-          }
-        ] : null
         service = var.service != null ? {
           type = var.service.type
         } : null
       }
-      environmentId = var.container_app_environment_resource_id
+      environmentId        = var.container_app_environment_resource_id
       managedEnvironmentId = var.container_app_environment_resource_id
       template = {
         containers = [
           for cont in var.template.containers : { for k, v in {
-            imageType = "ContainerImage"
             args    = cont.args
             command = cont.command
             env = cont.env != null ? [
@@ -202,16 +204,36 @@ resource "azapi_resource" "container_app" {
       workloadProfileName = var.workload_profile_name
     }
   }
-  # response_export_values    = ["*"]
+  create_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers              = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  response_export_values    = ["*"]
   schema_validation_enabled = false
-  tags                      = var.tags
+  sensitive_body = local.sensitive_body_present ? {
+    properties = {
+      configuration = {
+        secrets = var.secrets != null ? [
+          for s in var.secrets : {
+            identity    = s.identity
+            keyVaultUrl = s.key_vault_secret_id
+            name        = s.name
+            value       = s.value
+          }
+        ] : null
+    } }
+  } : null
+  sensitive_body_version = local.sensitive_body_present ? merge(var.secrets == null ? {} : {
+    "properties.configuration.secrets" = var.secrets_version
+  }, {}) : null
+  tags           = var.tags
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "identity" {
-    for_each = module.avm_interfaces.managed_identities_azapi == null ? [0] : [1]
+    for_each = module.avm_interfaces.managed_identities_azapi == null ? [] : [1]
 
     content {
-      type         = try(module.avm_interfaces.managed_identities_azapi.type, "None")
-      identity_ids = try(module.avm_interfaces.managed_identities_azapi.identity_ids, [])
+      type         = module.avm_interfaces.managed_identities_azapi.type
+      identity_ids = module.avm_interfaces.managed_identities_azapi.identity_ids
     }
   }
   dynamic "timeouts" {
@@ -230,6 +252,7 @@ resource "azapi_resource" "container_app" {
       body.properties.template.revisionSuffix,
       body.properties.managedEnvironmentId,
       schema_validation_enabled,
+      response_export_values,
     ]
   }
 }

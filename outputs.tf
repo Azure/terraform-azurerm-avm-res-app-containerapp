@@ -11,7 +11,7 @@ output "custom_domains" {
 
 output "environment_id" {
   description = "The ID of the Container App Environment."
-  value       = azapi_resource.container_app.output.properties.environmentId
+  value       = var.container_app_environment_resource_id
 }
 
 output "fqdn_url" {
@@ -21,7 +21,7 @@ output "fqdn_url" {
 
 output "identity" {
   description = "The identities assigned to the Container App."
-  value       = azapi_resource.container_app.output.identity
+  value       = azapi_resource.container_app.identity
 }
 
 output "latest_ready_revision_name" {

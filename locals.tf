@@ -56,6 +56,33 @@ locals {
           } : null
       }] : [],
 
+      # TODO: The following block should be removed before the next major release
+      try(length(cont.startup_probe) > 0, false) ? [
+        for startup_probe in try(cont.startup_probe, []) : {
+          failureThreshold              = startup_probe.failure_count_threshold
+          initialDelaySeconds           = startup_probe.initial_delay
+          periodSeconds                 = startup_probe.interval_seconds
+          terminationGracePeriodSeconds = startup_probe.termination_grace_period_seconds
+          timeoutSeconds                = startup_probe.timeout
+          type                          = "Startup"
+          httpGet = startup_probe.transport == "HTTP" || startup_probe.transport == "HTTPS" ? {
+            host   = startup_probe.host
+            path   = startup_probe.path
+            port   = startup_probe.port
+            scheme = startup_probe.transport
+            httpHeaders = startup_probe.header != null ? [
+              for header in startup_probe.header : {
+                name  = header.name
+                value = header.value
+              }
+            ] : null
+          } : null
+          tcpSocket = startup_probe.transport == "TCP" ? {
+            host = startup_probe.host
+            port = startup_probe.port
+          } : null
+      }] : [],
+
       try(length(cont.startup_probes) > 0, false) ? [
         for startup_probe in try(cont.startup_probes, []) : {
           failureThreshold              = startup_probe.failure_count_threshold
@@ -83,7 +110,8 @@ locals {
       }] : [],
     )
   }
-  resource_group_id = "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+  main_location     = coalesce(var.location, data.azapi_resource.rg.location)
+  resource_group_id = data.azapi_resource.rg.id
   scale_rules = concat(
     var.template.azure_queue_scale_rules != null ? [
       for rule in var.template.azure_queue_scale_rules : {

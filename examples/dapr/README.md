@@ -145,7 +145,6 @@ module "node_app" {
   source = "../../"
 
   container_app_environment_resource_id = azapi_resource.managed_environment.id
-  location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-node"
   resource_group_name                   = azurerm_resource_group.this.name
   template = {
@@ -179,6 +178,7 @@ module "node_app" {
     external_enabled = false
     target_port      = local.node_port
   }
+  location = azurerm_resource_group.this.location
   managed_identities = {
     user_assigned_resource_ids = [azurerm_user_assigned_identity.nodeapp.id]
   }
@@ -192,7 +192,6 @@ module "python_app" {
   source = "../../"
 
   container_app_environment_resource_id = azapi_resource.managed_environment.id
-  location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-python"
   resource_group_name                   = azurerm_resource_group.this.name
   template = {
@@ -209,6 +208,7 @@ module "python_app" {
     enabled = true
     app_id  = "pythonapp"
   }
+  location = azurerm_resource_group.this.location
 
   depends_on = [module.node_app]
 }
