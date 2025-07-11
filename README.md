@@ -218,10 +218,10 @@ Type:
 object({
     cooldown_period                  = optional(number, 300)
     max_replicas                     = optional(number, 10)
-    min_replicas                     = optional(number)
+    min_replicas                     = optional(number, 0)
     polling_interval                 = optional(number, 30)
     revision_suffix                  = optional(string)
-    termination_grace_period_seconds = optional(number)
+    termination_grace_period_seconds = optional(number, 0)
 
     azure_queue_scale_rules = optional(list(object({
       name         = string
@@ -264,7 +264,7 @@ object({
       readiness_probes = optional(list(object({
         failure_count_threshold = optional(number, 3)
         host                    = optional(string)
-        initial_delay           = optional(number)
+        initial_delay           = optional(number, 0)
         interval_seconds        = optional(number, 10)
         path                    = optional(string)
         port                    = number
@@ -280,7 +280,7 @@ object({
       startup_probe = optional(list(object({
         failure_count_threshold          = optional(number, 3)
         host                             = optional(string)
-        initial_delay                    = optional(number)
+        initial_delay                    = optional(number, 0)
         interval_seconds                 = optional(number, 10)
         path                             = optional(string)
         port                             = number
@@ -295,7 +295,7 @@ object({
       startup_probes = optional(list(object({
         failure_count_threshold          = optional(number, 3)
         host                             = optional(string)
-        initial_delay                    = optional(number)
+        initial_delay                    = optional(number, 0)
         interval_seconds                 = optional(number, 10)
         path                             = optional(string)
         port                             = number
@@ -375,7 +375,7 @@ object({
         secret_name = string
       })))
       storage_name = optional(string)
-      storage_type = optional(string)
+      storage_type = optional(string, "EmptyDir")
     })))
   })
 ```
@@ -709,14 +709,14 @@ Description: A list of identity settings for the Container App.
 ---
 `identity_settings` block supports the following:
 - `identity` - (Required) The resource ID of the user-assigned managed identity.
-- `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, and `Retain`.
+- `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, `Retain` and `All`. Defaults to `All`.
 
 Type:
 
 ```hcl
 list(object({
     identity  = string
-    lifecycle = string
+    lifecycle = optional(string, "All")
   }))
 ```
 
@@ -728,11 +728,18 @@ Description:
 This object defines the ingress properties for the container app:
 
 - `allow_insecure_connections` - (Optional) Should this ingress allow insecure connections? Defaults to `false`.
-- `client_certificate_mode` - (Optional) The mode for client certificate authentication. Possible values include `optional` and `required`. Defaults to `Ignore`.
+- `client_certificate_mode` - (Optional) The mode for client certificate authentication. Possible values include `optional` and `required`.
 - `exposed_port` - (Optional) The exposed port on the container for the Ingress traffic. Defaults to `0`.
 - `external_enabled` - (Optional) Are connections to this Ingress from outside the Container App Environment enabled? Defaults to `false`.
 - `target_port` - (Required) The target port on the container for the Ingress traffic. Defaults to `Auto`.
-- `transport` - (Optional) The transport method for the Ingress. Possible values include `auto`, `http`, `http2`, and `tcp`. Defaults to `Auto`.
+- `transport` - (Optional) The transport method for the Ingress. Possible values include `auto`, `http`, `http2`, and `tcp`. Defaults to `auto`.
+
+---
+`traffic_weight` block supports the following:
+- `label` - (Optional) The label to apply to the revision as a name prefix for routing traffic.
+- `latest_revision` - (Optional) This traffic Weight relates to the latest stable Container Revision. Defaults to `false`.
+- `revision_suffix` - (Optional) The suffix string to which this `traffic_weight` applies.
+- `percentage` - (Required) The percentage of traffic which should be sent according to this configuration.
 
 ---
 `cors_policy` block supports the following:
@@ -760,23 +767,23 @@ This object defines the ingress properties for the container app:
 `sticky_sessions` block supports the following:
 - `affinity` - (Optional) The affinity type for sticky sessions. Possible values include `None`, `ClientIP`, and `Server`.
 
----
-`traffic_weight` block supports the following:
-- `label` - (Optional) The label to apply to the revision as a name prefix for routing traffic.
-- `latest_revision` - (Optional) This traffic Weight relates to the latest stable Container Revision.
-- `revision_suffix` - (Optional) The suffix string to which this `traffic_weight` applies.
-- `percentage` - (Required) The percentage of traffic which should be sent according to this configuration.
-
 Type:
 
 ```hcl
 object({
     allow_insecure_connections = optional(bool, false)
-    client_certificate_mode    = optional(string, "Ignore")
+    client_certificate_mode    = optional(string)
     exposed_port               = optional(number, 0)
     external_enabled           = optional(bool, false)
     target_port                = optional(number)
-    transport                  = optional(string, "Auto")
+    transport                  = optional(string, "auto")
+
+    traffic_weight = list(object({
+      label           = optional(string)
+      latest_revision = optional(bool, false)
+      revision_suffix = optional(string)
+      percentage      = number
+    }))
 
     additional_port_mappings = optional(list(object({
       exposed_port = number
@@ -809,14 +816,6 @@ object({
     sticky_sessions = optional(object({
       affinity = optional(string, "none")
     }))
-
-    traffic_weight = optional(list(object({
-      label           = optional(string)
-      latest_revision = optional(bool, true)
-      revision_suffix = optional(string)
-      percentage      = optional(number, 100)
-    })))
-
   })
 ```
 
@@ -824,7 +823,7 @@ Default: `null`
 
 ### <a name="input_location"></a> [location](#input\_location)
 
-Description: Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location. This variable would be required in v1.0.0.
+Description: Azure region where the resource should be deployed. If null, the location will be inferred from the resource group location. This variable would be required in v1.0.0.
 
 Type: `string`
 
@@ -924,12 +923,12 @@ Type:
 map(object({
     role_definition_id_or_name             = string
     principal_id                           = string
-    description                            = optional(string, null)
+    description                            = optional(string)
     skip_service_principal_aad_check       = optional(bool, false)
-    condition                              = optional(string, null)
-    condition_version                      = optional(string, null)
-    delegated_managed_identity_resource_id = optional(string, null)
-    principal_type                         = optional(string, null)
+    condition                              = optional(string)
+    condition_version                      = optional(string)
+    delegated_managed_identity_resource_id = optional(string)
+    principal_type                         = optional(string)
   }))
 ```
 
@@ -1016,19 +1015,19 @@ Default: `null`
 
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
-Description: - `create` - (Defaults to 30 minutes) Used when creating the Container App.
-- `delete` - (Defaults to 30 minutes) Used when deleting the Container App.
-- `read` - (Defaults to 5 minutes) Used when retrieving the Container App.
-- `update` - (Defaults to 30 minutes) Used when updating the Container App.
+Description: - `create` - (Defaults to 30 minutes) Used when creating the Container App. Defaults to `30m`.
+- `delete` - (Defaults to 30 minutes) Used when deleting the Container App. Defaults to `30m`.
+- `read` - (Defaults to 5 minutes) Used when retrieving the Container App. Defaults to `5m`.
+- `update` - (Defaults to 30 minutes) Used when updating the Container App. Defaults to `30m`.
 
 Type:
 
 ```hcl
 object({
-    create = optional(string)
-    delete = optional(string)
-    read   = optional(string)
-    update = optional(string)
+    create = optional(string, "30m")
+    delete = optional(string, "30m")
+    read   = optional(string, "5m")
+    update = optional(string, "30m")
   })
 ```
 

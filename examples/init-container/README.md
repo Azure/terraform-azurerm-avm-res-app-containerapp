@@ -73,6 +73,7 @@ module "container_apps" {
       }
     ]
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = false
     target_port                = 80

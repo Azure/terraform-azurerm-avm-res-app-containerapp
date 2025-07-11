@@ -166,6 +166,7 @@ module "node_app" {
     app_protocol = "http"
     app_port     = local.node_port
   }
+  enable_telemetry = false
   ingress = {
     external_enabled = false
     target_port      = local.node_port
@@ -174,6 +175,7 @@ module "node_app" {
   managed_identities = {
     user_assigned_resource_ids = [azurerm_user_assigned_identity.nodeapp.id]
   }
+  revision_mode = "Single"
 
   depends_on = [
     azapi_resource.dapr_statestore
@@ -200,7 +202,9 @@ module "python_app" {
     enabled = true
     app_id  = "pythonapp"
   }
-  location = azurerm_resource_group.this.location
+  enable_telemetry = false
+  location         = azurerm_resource_group.this.location
+  revision_mode    = "Single"
 
   depends_on = [module.node_app]
 }

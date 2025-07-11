@@ -198,13 +198,11 @@ resource "azurerm_container_app_environment" "example" {
 }
 
 module "container_apps" {
-  source  = "Azure/avm-res-app-containerapp/azurerm"
-  version = "0.6.0"
+  source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
   name                                  = "nginx"
   resource_group_name                   = azurerm_resource_group.test.name
-  revision_mode                         = "Single"
   template = {
     containers = [
       {
@@ -215,6 +213,7 @@ module "container_apps" {
       }
     ]
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = false
     external_enabled           = true
@@ -233,6 +232,7 @@ module "container_apps" {
       password_secret_name = "secname"
     }
   ]
+  revision_mode = "Single"
   secrets = {
     nginx = {
       name  = "secname"
@@ -333,9 +333,9 @@ The following Modules are called:
 
 ### <a name="module_container_apps"></a> [container\_apps](#module\_container\_apps)
 
-Source: Azure/avm-res-app-containerapp/azurerm
+Source: ../..
 
-Version: 0.6.0
+Version:
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

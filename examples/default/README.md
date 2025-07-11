@@ -82,6 +82,7 @@ module "counting" {
       }
     }
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = true
     client_certificate_mode    = "ignore"

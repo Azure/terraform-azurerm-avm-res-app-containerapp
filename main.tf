@@ -40,9 +40,9 @@ resource "azapi_resource" "container_app" {
             lifecycle = is.lifecycle
           }
         ] : []
-        ingress = var.ingress != null ? {
+        ingress = var.ingress == null ? null : {
           allowInsecure         = var.ingress.allow_insecure_connections
-          clientCertificateMode = title(var.ingress.client_certificate_mode)
+          clientCertificateMode = try(title(var.ingress.client_certificate_mode), null)
           exposedPort           = var.ingress.exposed_port
           external              = var.ingress.external_enabled
           targetPort            = var.ingress.target_port
@@ -82,12 +82,7 @@ resource "azapi_resource" "container_app" {
           stickySessions = var.ingress.sticky_sessions != null ? {
             affinity = var.ingress.sticky_sessions.affinity
           } : null
-          traffic = var.ingress.traffic_weight == null ? [{
-            label          = ""
-            latestRevision = true
-            revisionName   = ""
-            weight         = 100
-            }] : [
+          traffic = [
             for weight in var.ingress.traffic_weight : {
               label          = weight.label
               latestRevision = weight.latest_revision
@@ -95,7 +90,7 @@ resource "azapi_resource" "container_app" {
               weight         = weight.percentage
             }
           ]
-        } : null
+        }
         maxInactiveRevisions = var.max_inactive_revisions
         registries = var.registries != null ? [
           for reg in var.registries : {
@@ -222,7 +217,7 @@ resource "azapi_resource" "container_app" {
         ] : null
     } }
   } : null
-  sensitive_body_version = local.sensitive_body_present ? merge(var.secrets == null ? {} : {
+  sensitive_body_version = local.sensitive_body_present ? merge(nonsensitive(var.secrets == null) ? {} : {
     "properties.configuration.secrets" = var.secrets_version
   }, {}) : null
   tags           = var.tags

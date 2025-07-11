@@ -31,9 +31,8 @@ module "container_app" {
   source = "../../"
 
   container_app_environment_resource_id = azurerm_container_app_environment.this.id
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
-  name                = module.naming.container_app.name_unique
-  resource_group_name = azurerm_resource_group.this.name
+  name                                  = module.naming.container_app.name_unique
+  resource_group_name                   = azurerm_resource_group.this.name
   template = {
     containers = [{
       image  = "nginx:alpine"
@@ -61,11 +60,17 @@ module "container_app" {
       }]
     }]
   }
+  enable_telemetry = false
   ingress = {
     external_enabled = true
     target_port      = 80
+    traffic_weight = [{
+      latest_revision = true
+      percentage      = 100
+    }]
   }
-  location = azurerm_resource_group.this.location
+  location      = azurerm_resource_group.this.location
+  revision_mode = "Single"
   secrets = {
     nginx_config = {
       name  = "nginx-config"
