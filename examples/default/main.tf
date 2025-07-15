@@ -26,8 +26,6 @@ resource "azurerm_container_app_environment" "example" {
   resource_group_name = azurerm_resource_group.test.name
 }
 
-data "azurerm_client_config" "this" {}
-
 module "counting" {
   source = "../.."
 

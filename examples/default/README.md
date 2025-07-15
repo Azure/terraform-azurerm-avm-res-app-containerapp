@@ -32,8 +32,6 @@ resource "azurerm_container_app_environment" "example" {
   resource_group_name = azurerm_resource_group.test.name
 }
 
-data "azurerm_client_config" "this" {}
-
 module "counting" {
   source = "../.."
 
@@ -195,7 +193,6 @@ The following resources are used by this module:
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.env_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
-- [azurerm_client_config.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
