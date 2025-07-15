@@ -93,7 +93,6 @@ module "counting" {
       percentage      = 100
     }]
   }
-  location      = azurerm_resource_group.test.location
   revision_mode = "Single"
   secrets = {
     facebook_secret = {
@@ -165,7 +164,6 @@ module "dashboard" {
       percentage      = 100
     }]
   }
-  location = azurerm_resource_group.test.location
   managed_identities = {
     system_assigned = true
   }

@@ -10,11 +10,6 @@ moved {
   to   = azapi_resource.container_app
 }
 
-data "azapi_resource" "rg" {
-  name = var.resource_group_name
-  type = "Microsoft.Resources/resourceGroups@2024-11-01"
-}
-
 resource "azapi_resource" "container_app" {
   location  = local.main_location
   name      = var.name

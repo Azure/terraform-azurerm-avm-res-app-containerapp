@@ -150,11 +150,11 @@ module "node_app" {
         value = local.node_port
       }]
       readiness_probes = [{
-        initial_delay_seconds = 5
-        path                  = "/order"
-        period_seconds        = 10
-        port                  = local.node_port
-        transport             = "HTTP"
+        initial_delay  = 5
+        path           = "/order"
+        period_seconds = 10
+        port           = local.node_port
+        transport      = "HTTP"
       }]
     }]
     min_replicas = 1
@@ -170,8 +170,11 @@ module "node_app" {
   ingress = {
     external_enabled = false
     target_port      = local.node_port
+    traffic_weight = [{
+      latest_revision = true
+      percentage      = 100
+    }]
   }
-  location = azurerm_resource_group.this.location
   managed_identities = {
     user_assigned_resource_ids = [azurerm_user_assigned_identity.nodeapp.id]
   }
@@ -202,9 +205,10 @@ module "python_app" {
     enabled = true
     app_id  = "pythonapp"
   }
-  enable_telemetry = false
-  location         = azurerm_resource_group.this.location
-  revision_mode    = "Single"
+  enable_telemetry  = false
+  location          = azurerm_resource_group.this.location
+  resource_group_id = azurerm_resource_group.this.id
+  revision_mode     = "Single"
 
   depends_on = [module.node_app]
 }

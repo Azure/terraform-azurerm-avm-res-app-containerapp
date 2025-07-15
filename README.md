@@ -216,12 +216,14 @@ Type:
 
 ```hcl
 object({
-    cooldown_period                  = optional(number, 300)
-    max_replicas                     = optional(number, 10)
-    min_replicas                     = optional(number, 0)
-    polling_interval                 = optional(number, 30)
-    revision_suffix                  = optional(string)
-    termination_grace_period_seconds = optional(number, 0)
+    cooldown_period = optional(number, 300)
+    max_replicas    = optional(number, 10)
+    #TODO:Set `min_replicas` default value to `0` in `v1.0.0`
+    min_replicas     = optional(number)
+    polling_interval = optional(number, 30)
+    revision_suffix  = optional(string)
+    #TODO:Set `termination_grace_period_seconds` default value to `0` in `v1.0.0`
+    termination_grace_period_seconds = optional(number)
 
     azure_queue_scale_rules = optional(list(object({
       name         = string
@@ -894,6 +896,14 @@ list(object({
 
 Default: `null`
 
+### <a name="input_resource_group_id"></a> [resource\_group\_id](#input\_resource\_group\_id)
+
+Description: (Optional) The id of the resource group in which the Container App Environment is to be created. Set only when you see recreation in Terraform plan caused by known after apply value assigned to `azapi_resource.container_app.parent_id`(when use this module along with `depends_on` another resource, all data source in this module would be defer to the apply time, which causes `data.azapi_client_config.current`'s values be `known after apply`). Changing this forces a new resource to be created.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_revision_mode"></a> [revision\_mode](#input\_revision\_mode)
 
 Description: (Required) The revisions operational mode for the Container App. Possible values include `Single` and `Multiple`. In `Single` mode, a single revision is in operation at any given time. In `Multiple` mode, more than one revision can be active at a time and can be configured with load distribution via the `traffic_weight` block in the `ingress` configuration.
@@ -981,7 +991,7 @@ Default: `null`
 
 ### <a name="input_secrets_version"></a> [secrets\_version](#input\_secrets\_version)
 
-Description: version number for the secrets. When we need to trigger an update on secrets, we must set this version number to a different value. Defaults to 0.
+Description: Version number for the secrets. Must set this version number to a different value to trigger an update on secrets. Defaults to `0`.
 
 Type: `number`
 

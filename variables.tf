@@ -22,12 +22,14 @@ variable "resource_group_name" {
 
 variable "template" {
   type = object({
-    cooldown_period                  = optional(number, 300)
-    max_replicas                     = optional(number, 10)
-    min_replicas                     = optional(number, 0)
-    polling_interval                 = optional(number, 30)
-    revision_suffix                  = optional(string)
-    termination_grace_period_seconds = optional(number, 0)
+    cooldown_period = optional(number, 300)
+    max_replicas    = optional(number, 10)
+    #TODO:Set `min_replicas` default value to `0` in `v1.0.0`
+    min_replicas     = optional(number)
+    polling_interval = optional(number, 30)
+    revision_suffix  = optional(string)
+    #TODO:Set `termination_grace_period_seconds` default value to `0` in `v1.0.0`
+    termination_grace_period_seconds = optional(number)
 
     azure_queue_scale_rules = optional(list(object({
       name         = string
@@ -931,6 +933,12 @@ variable "registries" {
 EOT
 }
 
+variable "resource_group_id" {
+  type        = string
+  default     = null
+  description = "(Optional) The id of the resource group in which the Container App Environment is to be created. Set only when you see recreation in Terraform plan caused by known after apply value assigned to `azapi_resource.container_app.parent_id`(when use this module along with `depends_on` another resource, all data source in this module would be defer to the apply time, which causes `data.azapi_client_config.current`'s values be `known after apply`). Changing this forces a new resource to be created."
+}
+
 variable "revision_mode" {
   type        = string
   default     = "Single"
@@ -1012,7 +1020,7 @@ EOT
 variable "secrets_version" {
   type        = number
   default     = 0
-  description = "version number for the secrets. When we need to trigger an update on secrets, we must set this version number to a different value. Defaults to 0."
+  description = "Version number for the secrets. Must set this version number to a different value to trigger an update on secrets. Defaults to `0`."
   nullable    = false
 }
 

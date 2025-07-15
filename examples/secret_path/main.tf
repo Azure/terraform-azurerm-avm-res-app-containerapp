@@ -63,7 +63,6 @@ module "container_app" {
       percentage      = 100
     }]
   }
-  location      = azurerm_resource_group.this.location
   revision_mode = "Single"
   secrets = {
     nginx_config = {

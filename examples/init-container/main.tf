@@ -78,6 +78,5 @@ module "container_apps" {
       percentage      = 100
     }]
   }
-  location      = azurerm_resource_group.test.location
   revision_mode = "Single"
 }

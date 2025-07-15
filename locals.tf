@@ -1,5 +1,17 @@
 data "azapi_client_config" "current" {}
 
+data "azapi_resource" "rg" {
+  name = var.resource_group_name
+  type = "Microsoft.Resources/resourceGroups@2024-11-01"
+
+  lifecycle {
+    precondition {
+      condition     = var.resource_group_id == null ? true : "/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}" == var.resource_group_id
+      error_message = "`var.resource_group_id` is not as expected: '/subscriptions/${data.azapi_client_config.current.subscription_id}/resourceGroups/${var.resource_group_name}'."
+    }
+  }
+}
+
 locals {
   container_probes = {
     for cont in var.template.containers : cont.name => concat(
@@ -111,7 +123,7 @@ locals {
     )
   }
   main_location     = coalesce(var.location, data.azapi_resource.rg.location)
-  resource_group_id = data.azapi_resource.rg.id
+  resource_group_id = coalesce(var.resource_group_id, data.azapi_resource.rg.id)
   scale_rules = concat(
     var.template.azure_queue_scale_rules != null ? [
       for rule in var.template.azure_queue_scale_rules : {
