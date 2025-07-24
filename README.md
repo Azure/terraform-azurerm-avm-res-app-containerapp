@@ -12,7 +12,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.0)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.5)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -30,6 +30,7 @@ The following resources are used by this module:
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
+- [azapi_resource.rg](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 - [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
@@ -40,12 +41,6 @@ The following input variables are required:
 ### <a name="input_container_app_environment_resource_id"></a> [container\_app\_environment\_resource\_id](#input\_container\_app\_environment\_resource\_id)
 
 Description: The ID of the Container App Environment to host this Container App.
-
-Type: `string`
-
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location.
 
 Type: `string`
 
@@ -63,158 +58,171 @@ Type: `string`
 
 ### <a name="input_template"></a> [template](#input\_template)
 
-Description: - `cooldown_period` - (Optional) The cooldown period in seconds after a scaling action before another scaling action can be triggered. Defaults to `300`.
-- `max_replicas` - (Optional) The maximum number of replicas for this container.
-- `min_replicas` - (Optional) The minimum number of replicas for this container.
-- `polling_interval` - (Optional) The interval in seconds at which the scaling rules are evaluated. Defaults to `30`.
-- `revision_suffix` - (Optional) The suffix for the revision. This value must be unique for the lifetime of the Resource. If omitted the service will use a hash function to create one.
+Description:  - `cooldown_period` - (Optional) The cooldown period in seconds after a scaling action before another scaling action can be triggered. Defaults to `300`.
+ - `max_replicas` - (Optional) The maximum number of replicas for this container.
+ - `min_replicas` - (Optional) The minimum number of replicas for this container.
+ - `polling_interval` - (Optional) The interval in seconds at which the scaling rules are evaluated. Defaults to `30`.
+ - `revision_suffix` - (Optional) The suffix for the revision. This value must be unique for the lifetime of the Resource. If omitted the service will use a hash function to create one.
+
+ ---
+ `azure_queue_scale_rule` block supports the following:
+ - `name` - (Required) The name of the Scaling Rule
+ - `queue_length` - (Required) The value of the length of the queue to trigger scaling actions.
+ - `queue_name` - (Required) The name of the Azure Queue
+
+ ---
+ `authentication` block supports the following:
+ - `secret_name` - (Required) The name of the Container App Secret to use for this Scale Rule Authentication.
+ - `trigger_parameter` - (Required) The Trigger Parameter name to use the supply the value retrieved from the `secret_name`.
+
+ ---
+ `containers` block supports the following:
+ - `args` - (Optional) A list of extra arguments to pass to the container.
+ - `command` - (Optional) A command to pass to the container to override the default. This is provided as a list of command line elements without spaces.
+ - `cpu` - (Required) The amount of vCPU to allocate to the container. Possible values include `0.25`, `0.5`, `0.75`, `1.0`, `1.25`, `1.5`, `1.75`, and `2.0`. When there's a workload profile specified, there's no such constraint.
+ - `image` - (Required) The image to use to create the container.
+ - `memory` - (Required) The amount of memory to allocate to the container. Possible values are `0.5Gi`, `1Gi`, `1.5Gi`, `2Gi`, `2.5Gi`, `3Gi`, `3.5Gi` and `4Gi`. When there's a workload profile specified, there's no such constraint.
+ - `name` - (Required) The name of the container
+
+ ---
+ `env` block supports the following:
+ - `name` - (Required) The name of the environment variable for the container.
+ - `secret_name` - (Optional) The name of the secret that contains the value for this environment variable.
+ - `value` - (Optional) The value for this environment variable.
+
+ ---
+ `liveness_probes` block supports the following:
+ - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
+ - `host` - (Optional) The probe hostname. Defaults to the pod IP address. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
+ - `initial_delay` - (Optional) The time in seconds to wait after the container has started before the probe is started.
+ - `interval_seconds` - (Optional) How often, in seconds, the probe should run. Possible values are in the range `1`
+ - `path` - (Optional) The URI to use with the `host` for http type probes. Not valid for `TCP` type probes. Defaults to `/`.
+ - `port` - (Required) The port number on which to connect. Possible values are between `1` and `65535`.
+ - `timeout` - (Optional) Time in seconds after which the probe times out. Possible values are in the range `1`
+ - `transport` - (Required) Type of probe. Possible values are `TCP`, `HTTP`, and `HTTPS`.
+
+ ---
+ `header` block supports the following:
+ - `name` - (Required) The HTTP Header Name.
+ - `value` - (Required) The HTTP Header value.
+
+ ---
+ `readiness_probes` block supports the following:
+ - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
+ - `host` - (Optional) The probe hostname. Defaults to the pod IP address. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
+ - `initial_delay` - (Optional) The number of seconds elapsed after the container has started before the probe is initiated. Possible values are between `0` and `60`. Defaults to `0` seconds.
+ - `interval_seconds` - (Optional) How often, in seconds, the probe should run. Possible values are between `1` and `240`. Defaults to `10`
+ - `path` - (Optional) The URI to use for http type probes. Not valid for `TCP` type probes. Defaults to `/`.
+ - `port` - (Required) The port number on which to connect. Possible values are between `1` and `65535`.
+ - `success_count_threshold` - (Optional) The number of consecutive successful responses required to consider this probe as successful. Possible values are between `1` and `10`. Defaults to `3`.
+ - `timeout` - (Optional) Time in seconds after which the probe times out. Possible values are in the range `1`
+ - `transport` - (Required) Type of probe. Possible values are `TCP`, `HTTP`, and `HTTPS`.
+
+ ---
+ `header` block supports the following:
+ - `name` - (Required) The HTTP Header Name.
+ - `value` - (Required) The HTTP Header value.
 
 ---
-`azure_queue_scale_rule` block supports the following:
-- `name` - (Required) The name of the Scaling Rule
-- `queue_length` - (Required) The value of the length of the queue to trigger scaling actions.
-- `queue_name` - (Required) The name of the Azure Queue
+ `startup_probe` block has been deprecated and would be removed in `v1`, please use `startup_probes` instead! `startup_probe` block supports the following:
+ - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
+ - `host` - (Optional) The value for the host header which should be sent with this probe. If unspecified, the IP Address of the Pod is used as the host header. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
+ - `initial_delay` - (Optional) The number of seconds elapsed after the container has started before the probe is initiated. Possible values are between `0` and `60`. Defaults to `0` seconds.
+ - `interval_seconds` - (Optional) How often, in seconds, the probe should run. Possible values are between `1` and `240`. Defaults to `10`
+ - `path` - (Optional) The URI to use with the `host` for http type probes. Not valid for `TCP` type probes. Defaults to `/`.
+ - `port` - (Required) The port number on which to connect. Possible values are between `1` and `65535`.
+ - `timeout` - (Optional) Time in seconds after which the probe times out. Possible values are in the range `1`
+ - `transport` - (Required) Type of probe. Possible values are `TCP`, `HTTP`, and `HTTPS`.
 
----
-`authentication` block supports the following:
-- `secret_name` - (Required) The name of the Container App Secret to use for this Scale Rule Authentication.
-- `trigger_parameter` - (Required) The Trigger Parameter name to use the supply the value retrieved from the `secret_name`.
+ ---
+ `startup_probes` block supports the following:
+ - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
+ - `host` - (Optional) The value for the host header which should be sent with this probe. If unspecified, the IP Address of the Pod is used as the host header. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
+ - `initial_delay` - (Optional) The number of seconds elapsed after the container has started before the probe is initiated. Possible values are between `0` and `60`. Defaults to `0` seconds.
+ - `interval_seconds` - (Optional) How often, in seconds, the probe should run. Possible values are between `1` and `240`. Defaults to `10`
+ - `path` - (Optional) The URI to use with the `host` for http type probes. Not valid for `TCP` type probes. Defaults to `/`.
+ - `port` - (Required) The port number on which to connect. Possible values are between `1` and `65535`.
+ - `timeout` - (Optional) Time in seconds after which the probe times out. Possible values are in the range `1`
+ - `transport` - (Required) Type of probe. Possible values are `TCP`, `HTTP`, and `HTTPS`.
 
----
-`containers` block supports the following:
-- `args` - (Optional) A list of extra arguments to pass to the container.
-- `command` - (Optional) A command to pass to the container to override the default. This is provided as a list of command line elements without spaces.
-- `cpu` - (Required) The amount of vCPU to allocate to the container. Possible values include `0.25`, `0.5`, `0.75`, `1.0`, `1.25`, `1.5`, `1.75`, and `2.0`. When there's a workload profile specified, there's no such constraint.
-- `image` - (Required) The image to use to create the container.
-- `memory` - (Required) The amount of memory to allocate to the container. Possible values are `0.5Gi`, `1Gi`, `1.5Gi`, `2Gi`, `2.5Gi`, `3Gi`, `3.5Gi` and `4Gi`. When there's a workload profile specified, there's no such constraint.
-- `name` - (Required) The name of the container
+ ---
+ `header` block supports the following:
+ - `name` - (Required) The HTTP Header Name.
+ - `value` - (Required) The HTTP Header value.
 
----
-`env` block supports the following:
-- `name` - (Required) The name of the environment variable for the container.
-- `secret_name` - (Optional) The name of the secret that contains the value for this environment variable.
-- `value` - (Optional) The value for this environment variable.
+ ---
+ `volume_mounts` block supports the following:
+ - `name` - (Required) The name of the Volume to be mounted in the container.
+ - `path` - (Required) The path in the container at which to mount this volume.
 
----
-`liveness_probes` block supports the following:
-- `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
-- `host` - (Optional) The probe hostname. Defaults to the pod IP address. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
-- `initial_delay` - (Optional) The time in seconds to wait after the container has started before the probe is started.
-- `interval_seconds` - (Optional) How often, in seconds, the probe should run. Possible values are in the range `1`
-- `path` - (Optional) The URI to use with the `host` for http type probes. Not valid for `TCP` type probes. Defaults to `/`.
-- `port` - (Required) The port number on which to connect. Possible values are between `1` and `65535`.
-- `timeout` - (Optional) Time in seconds after which the probe times out. Possible values are in the range `1`
-- `transport` - (Required) Type of probe. Possible values are `TCP`, `HTTP`, and `HTTPS`.
+ ---
+ `custom_scale_rule` block supports the following:
+ - `custom_rule_type` - (Required) The Custom rule type. Possible values include: `activemq`, `artemis-queue`, `kafka`, `pulsar`, `aws-cloudwatch`, `aws-dynamodb`, `aws-dynamodb-streams`, `aws-kinesis-stream`, `aws-sqs-queue`, `azure-app-insights`, `azure-blob`, `azure-data-explorer`, `azure-eventhub`, `azure-log-analytics`, `azure-monitor`, `azure-pipelines`, `azure-servicebus`, `azure-queue`, `cassandra`, `cpu`, `cron`, `datadog`, `elasticsearch`, `external`, `external-push`, `gcp-stackdriver`, `gcp-storage`, `gcp-pubsub`, `graphite`, `http`, `huawei-cloudeye`, `ibmmq`, `influxdb`, `kubernetes-workload`, `liiklus`, `memory`, `metrics-api`, `mongodb`, `mssql`, `mysql`, `nats-jetstream`, `stan`, `tcp`, `new-relic`, `openstack-metric`, `openstack-swift`, `postgresql`, `predictkube`, `prometheus`, `rabbitmq`, `redis`, `redis-cluster`, `redis-sentinel`, `redis-streams`, `redis-cluster-streams`, `redis-sentinel-streams`, `selenium-grid`,`solace-event-queue`, and `github-runner`.
+ - `metadata` - (Required)
+ - `name` - (Required) The name of the Scaling Rule
 
----
-`header` block supports the following:
-- `name` - (Required) The HTTP Header Name.
-- `value` - (Required) The HTTP Header value.
+ ---
+ `authentication` block supports the following:
+ - `secret_name` - (Required) The name of the Container App Secret to use for this Scale Rule Authentication.
+ - `trigger_parameter` - (Required) The Trigger Parameter name to use the supply the value retrieved from the `secret_name`.
 
----
-`readiness_probes` block supports the following:
-- `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
-- `host` - (Optional) The probe hostname. Defaults to the pod IP address. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
-- `initial_delay` - (Optional) The number of seconds elapsed after the container has started before the probe is initiated. Possible values are between `0` and `60`. Defaults to `0` seconds.
-- `interval_seconds` - (Optional) How often, in seconds, the probe should run. Possible values are between `1` and `240`. Defaults to `10`
-- `path` - (Optional) The URI to use for http type probes. Not valid for `TCP` type probes. Defaults to `/`.
-- `port` - (Required) The port number on which to connect. Possible values are between `1` and `65535`.
-- `success_count_threshold` - (Optional) The number of consecutive successful responses required to consider this probe as successful. Possible values are between `1` and `10`. Defaults to `3`.
-- `timeout` - (Optional) Time in seconds after which the probe times out. Possible values are in the range `1`
-- `transport` - (Required) Type of probe. Possible values are `TCP`, `HTTP`, and `HTTPS`.
+ ---
+ `http_scale_rule` block supports the following:
+ - `concurrent_requests` - (Required)
+ - `name` - (Required) The name of the Scaling Rule
 
----
-`header` block supports the following:
-- `name` - (Required) The HTTP Header Name.
-- `value` - (Required) The HTTP Header value.
+ ---
+ `authentication` block supports the following:
+ - `secret_name` - (Required) The name of the Container App Secret to use for this Scale Rule Authentication.
+ - `trigger_parameter` - (Required) The Trigger Parameter name to use the supply the value retrieved from the `secret_name`.
 
----
-`startup_probes` block supports the following:
-- `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
-- `host` - (Optional) The value for the host header which should be sent with this probe. If unspecified, the IP Address of the Pod is used as the host header. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
-- `initial_delay` - (Optional) The number of seconds elapsed after the container has started before the probe is initiated. Possible values are between `0` and `60`. Defaults to `0` seconds.
-- `interval_seconds` - (Optional) How often, in seconds, the probe should run. Possible values are between `1` and `240`. Defaults to `10`
-- `path` - (Optional) The URI to use with the `host` for http type probes. Not valid for `TCP` type probes. Defaults to `/`.
-- `port` - (Required) The port number on which to connect. Possible values are between `1` and `65535`.
-- `timeout` - (Optional) Time in seconds after which the probe times out. Possible values are in the range `1`
-- `transport` - (Required) Type of probe. Possible values are `TCP`, `HTTP`, and `HTTPS`.
+ ---
+ `init_container` block supports the following:
+ - `args` - (Optional) A list of extra arguments to pass to the container.
+ - `command` - (Optional) A command to pass to the container to override the default. This is provided as a list of command line elements without spaces.
+ - `cpu` - (Optional) The amount of vCPU to allocate to the container. Possible values include `0.25`, `0.5`, `0.75`, `1.0`, `1.25`, `1.5`, `1.75`, and `2.0`. When there's a workload profile specified, there's no such constraint.
+ - `image` - (Required) The image to use to create the container.
+ - `memory` - (Optional) The amount of memory to allocate to the container. Possible values are `0.5Gi`, `1Gi`, `1.5Gi`, `2Gi`, `2.5Gi`, `3Gi`, `3.5Gi` and `4Gi`. When there's a workload profile specified, there's no such constraint.
+ - `name` - (Required) The name of the container
 
----
-`header` block supports the following:
-- `name` - (Required) The HTTP Header Name.
-- `value` - (Required) The HTTP Header value.
+ ---
+ `env` block supports the following:
+ - `name` - (Required) The name of the environment variable for the container.
+ - `secret_name` - (Optional) The name of the secret that contains the value for this environment variable.
+ - `value` - (Optional) The value for this environment variable.
 
----
-`volume_mounts` block supports the following:
-- `name` - (Required) The name of the Volume to be mounted in the container.
-- `path` - (Required) The path in the container at which to mount this volume.
+ ---
+ `volume_mounts` block supports the following:
+ - `name` - (Required) The name of the Volume to be mounted in the container.
+ - `path` - (Required) The path in the container at which to mount this volume.
 
----
-`custom_scale_rule` block supports the following:
-- `custom_rule_type` - (Required) The Custom rule type. Possible values include: `activemq`, `artemis-queue`, `kafka`, `pulsar`, `aws-cloudwatch`, `aws-dynamodb`, `aws-dynamodb-streams`, `aws-kinesis-stream`, `aws-sqs-queue`, `azure-app-insights`, `azure-blob`, `azure-data-explorer`, `azure-eventhub`, `azure-log-analytics`, `azure-monitor`, `azure-pipelines`, `azure-servicebus`, `azure-queue`, `cassandra`, `cpu`, `cron`, `datadog`, `elasticsearch`, `external`, `external-push`, `gcp-stackdriver`, `gcp-storage`, `gcp-pubsub`, `graphite`, `http`, `huawei-cloudeye`, `ibmmq`, `influxdb`, `kubernetes-workload`, `liiklus`, `memory`, `metrics-api`, `mongodb`, `mssql`, `mysql`, `nats-jetstream`, `stan`, `tcp`, `new-relic`, `openstack-metric`, `openstack-swift`, `postgresql`, `predictkube`, `prometheus`, `rabbitmq`, `redis`, `redis-cluster`, `redis-sentinel`, `redis-streams`, `redis-cluster-streams`, `redis-sentinel-streams`, `selenium-grid`,`solace-event-queue`, and `github-runner`.
-- `metadata` - (Required)
-- `name` - (Required) The name of the Scaling Rule
+ ---
+ `tcp_scale_rule` block supports the following:
+ - `concurrent_requests` - (Required)
+ - `name` - (Required) The name of the Scaling Rule
 
----
-`authentication` block supports the following:
-- `secret_name` - (Required) The name of the Container App Secret to use for this Scale Rule Authentication.
-- `trigger_parameter` - (Required) The Trigger Parameter name to use the supply the value retrieved from the `secret_name`.
+ ---
+ `authentication` block supports the following:
+ - `secret_name` - (Required) The name of the Container App Secret to use for this Scale Rule Authentication.
+ - `trigger_parameter` - (Required) The Trigger Parameter name to use the supply the value retrieved from the `secret_name`.
 
----
-`http_scale_rule` block supports the following:
-- `concurrent_requests` - (Required)
-- `name` - (Required) The name of the Scaling Rule
-
----
-`authentication` block supports the following:
-- `secret_name` - (Required) The name of the Container App Secret to use for this Scale Rule Authentication.
-- `trigger_parameter` - (Required) The Trigger Parameter name to use the supply the value retrieved from the `secret_name`.
-
----
-`init_container` block supports the following:
-- `args` - (Optional) A list of extra arguments to pass to the container.
-- `command` - (Optional) A command to pass to the container to override the default. This is provided as a list of command line elements without spaces.
-- `cpu` - (Optional) The amount of vCPU to allocate to the container. Possible values include `0.25`, `0.5`, `0.75`, `1.0`, `1.25`, `1.5`, `1.75`, and `2.0`. When there's a workload profile specified, there's no such constraint.
-- `image` - (Required) The image to use to create the container.
-- `memory` - (Optional) The amount of memory to allocate to the container. Possible values are `0.5Gi`, `1Gi`, `1.5Gi`, `2Gi`, `2.5Gi`, `3Gi`, `3.5Gi` and `4Gi`. When there's a workload profile specified, there's no such constraint.
-- `name` - (Required) The name of the container
-
----
-`env` block supports the following:
-- `name` - (Required) The name of the environment variable for the container.
-- `secret_name` - (Optional) The name of the secret that contains the value for this environment variable.
-- `value` - (Optional) The value for this environment variable.
-
----
-`volume_mounts` block supports the following:
-- `name` - (Required) The name of the Volume to be mounted in the container.
-- `path` - (Required) The path in the container at which to mount this volume.
-
----
-`tcp_scale_rule` block supports the following:
-- `concurrent_requests` - (Required)
-- `name` - (Required) The name of the Scaling Rule
-
----
-`authentication` block supports the following:
-- `secret_name` - (Required) The name of the Container App Secret to use for this Scale Rule Authentication.
-- `trigger_parameter` - (Required) The Trigger Parameter name to use the supply the value retrieved from the `secret_name`.
-
----
-`volume` block supports the following:
-- `name` - (Required) The name of the volume.
-- `storage_name` - (Optional) The name of the `AzureFile` storage.
-- `storage_type` - (Optional) The type of storage volume. Possible values are `AzureFile`, `EmptyDir` and `Secret`. Defaults to `EmptyDir`.
+ ---
+ `volume` block supports the following:
+ - `name` - (Required) The name of the volume.
+ - `storage_name` - (Optional) The name of the `AzureFile` storage.
+ - `storage_type` - (Optional) The type of storage volume. Possible values are `AzureFile`, `EmptyDir` and `Secret`. Defaults to `EmptyDir`.
 
 Type:
 
 ```hcl
 object({
-    cooldown_period                  = optional(number, 300)
-    max_replicas                     = optional(number, 10)
-    min_replicas                     = optional(number)
-    polling_interval                 = optional(number, 30)
-    revision_suffix                  = optional(string)
+    cooldown_period = optional(number, 300)
+    max_replicas    = optional(number, 10)
+    #TODO:Set `min_replicas` default value to `0` in `v1.0.0`
+    min_replicas     = optional(number)
+    polling_interval = optional(number, 30)
+    revision_suffix  = optional(string)
+    #TODO:Set `termination_grace_period_seconds` default value to `0` in `v1.0.0`
     termination_grace_period_seconds = optional(number)
 
     azure_queue_scale_rules = optional(list(object({
@@ -241,14 +249,14 @@ object({
         value       = optional(string)
       })))
       liveness_probes = optional(list(object({
-        failure_count_threshold          = optional(number)
+        failure_count_threshold          = optional(number, 3)
         host                             = optional(string)
-        initial_delay                    = optional(number)
-        interval_seconds                 = optional(number)
+        initial_delay                    = optional(number, 1)
+        interval_seconds                 = optional(number, 10)
         path                             = optional(string)
         port                             = number
         termination_grace_period_seconds = optional(number)
-        timeout                          = optional(number)
+        timeout                          = optional(number, 1)
         transport                        = string
         header = optional(list(object({
           name  = string
@@ -256,29 +264,45 @@ object({
         })))
       })))
       readiness_probes = optional(list(object({
-        failure_count_threshold = optional(number)
+        failure_count_threshold = optional(number, 3)
         host                    = optional(string)
-        initial_delay           = optional(number)
-        interval_seconds        = optional(number)
+        initial_delay           = optional(number, 0)
+        interval_seconds        = optional(number, 10)
         path                    = optional(string)
         port                    = number
-        success_count_threshold = optional(number)
-        timeout                 = optional(number)
+        success_count_threshold = optional(number, 3)
+        timeout                 = optional(number, 1)
         transport               = string
         header = optional(list(object({
           name  = string
           value = string
         })))
       })))
-      startup_probes = optional(list(object({
-        failure_count_threshold          = optional(number)
+      #TODO:Remove startup_probe in v1.0.0
+      startup_probe = optional(list(object({
+        failure_count_threshold          = optional(number, 3)
         host                             = optional(string)
-        initial_delay                    = optional(number)
-        interval_seconds                 = optional(number)
+        initial_delay                    = optional(number, 0)
+        interval_seconds                 = optional(number, 10)
         path                             = optional(string)
         port                             = number
         termination_grace_period_seconds = optional(number)
-        timeout                          = optional(number)
+        timeout                          = optional(number, 1)
+        transport                        = string
+        header = optional(list(object({
+          name  = string
+          value = string
+        })))
+      })))
+      startup_probes = optional(list(object({
+        failure_count_threshold          = optional(number, 3)
+        host                             = optional(string)
+        initial_delay                    = optional(number, 0)
+        interval_seconds                 = optional(number, 10)
+        path                             = optional(string)
+        port                             = number
+        termination_grace_period_seconds = optional(number)
+        timeout                          = optional(number, 1)
         transport                        = string
         header = optional(list(object({
           name  = string
@@ -353,7 +377,7 @@ object({
         secret_name = string
       })))
       storage_name = optional(string)
-      storage_type = optional(string)
+      storage_type = optional(string, "EmptyDir")
     })))
   })
 ```
@@ -673,12 +697,12 @@ Default: `null`
 ### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
 
 Description: This variable controls whether or not telemetry is enabled for the module.  
-For more information see https://aka.ms/avm/telemetryinfo.  
+For more information see <https://aka.ms/avm/telemetryinfo>.  
 If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
-Default: `false`
+Default: `true`
 
 ### <a name="input_identity_settings"></a> [identity\_settings](#input\_identity\_settings)
 
@@ -687,14 +711,14 @@ Description: A list of identity settings for the Container App.
 ---
 `identity_settings` block supports the following:
 - `identity` - (Required) The resource ID of the user-assigned managed identity.
-- `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, and `Retain`.
+- `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, `Retain` and `All`. Defaults to `All`.
 
 Type:
 
 ```hcl
 list(object({
     identity  = string
-    lifecycle = string
+    lifecycle = optional(string, "All")
   }))
 ```
 
@@ -706,11 +730,18 @@ Description:
 This object defines the ingress properties for the container app:
 
 - `allow_insecure_connections` - (Optional) Should this ingress allow insecure connections? Defaults to `false`.
-- `client_certificate_mode` - (Optional) The mode for client certificate authentication. Possible values include `optional` and `required`. Defaults to `Ignore`.
+- `client_certificate_mode` - (Optional) The mode for client certificate authentication. Possible values include `optional` and `required`.
 - `exposed_port` - (Optional) The exposed port on the container for the Ingress traffic. Defaults to `0`.
 - `external_enabled` - (Optional) Are connections to this Ingress from outside the Container App Environment enabled? Defaults to `false`.
 - `target_port` - (Required) The target port on the container for the Ingress traffic. Defaults to `Auto`.
-- `transport` - (Optional) The transport method for the Ingress. Possible values include `auto`, `http`, `http2`, and `tcp`. Defaults to `Auto`.
+- `transport` - (Optional) The transport method for the Ingress. Possible values include `auto`, `http`, `http2`, and `tcp`. Defaults to `auto`.
+
+---
+`traffic_weight` block supports the following:
+- `label` - (Optional) The label to apply to the revision as a name prefix for routing traffic.
+- `latest_revision` - (Optional) This traffic Weight relates to the latest stable Container Revision. Defaults to `false`.
+- `revision_suffix` - (Optional) The suffix string to which this `traffic_weight` applies.
+- `percentage` - (Required) The percentage of traffic which should be sent according to this configuration.
 
 ---
 `cors_policy` block supports the following:
@@ -738,23 +769,23 @@ This object defines the ingress properties for the container app:
 `sticky_sessions` block supports the following:
 - `affinity` - (Optional) The affinity type for sticky sessions. Possible values include `None`, `ClientIP`, and `Server`.
 
----
-`traffic_weight` block supports the following:
-- `label` - (Optional) The label to apply to the revision as a name prefix for routing traffic.
-- `latest_revision` - (Optional) This traffic Weight relates to the latest stable Container Revision.
-- `revision_suffix` - (Optional) The suffix string to which this `traffic_weight` applies.
-- `percentage` - (Required) The percentage of traffic which should be sent according to this configuration.
-
 Type:
 
 ```hcl
 object({
     allow_insecure_connections = optional(bool, false)
-    client_certificate_mode    = optional(string, "Ignore")
+    client_certificate_mode    = optional(string)
     exposed_port               = optional(number, 0)
     external_enabled           = optional(bool, false)
     target_port                = optional(number)
-    transport                  = optional(string, "Auto")
+    transport                  = optional(string, "auto")
+
+    traffic_weight = list(object({
+      label           = optional(string)
+      latest_revision = optional(bool, false)
+      revision_suffix = optional(string)
+      percentage      = number
+    }))
 
     additional_port_mappings = optional(list(object({
       exposed_port = number
@@ -787,16 +818,16 @@ object({
     sticky_sessions = optional(object({
       affinity = optional(string, "none")
     }))
-
-    traffic_weight = optional(list(object({
-      label           = optional(string)
-      latest_revision = optional(bool, true)
-      revision_suffix = optional(string)
-      percentage      = optional(number, 100)
-    })))
-
   })
 ```
+
+Default: `null`
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: Azure region where the resource should be deployed. If null, the location will be inferred from the resource group location. This variable would be required in v1.0.0.
+
+Type: `string`
 
 Default: `null`
 
@@ -842,7 +873,7 @@ Description: (Optional). Max inactive revisions a Container App can have.
 
 Type: `number`
 
-Default: `2`
+Default: `0`
 
 ### <a name="input_registries"></a> [registries](#input\_registries)
 
@@ -862,6 +893,14 @@ list(object({
     username             = optional(string)
   }))
 ```
+
+Default: `null`
+
+### <a name="input_resource_group_id"></a> [resource\_group\_id](#input\_resource\_group\_id)
+
+Description: (Optional) The id of the resource group in which the Container App Environment is to be created. Set only when you see recreation in Terraform plan caused by known after apply value assigned to `azapi_resource.container_app.parent_id`(when use this module along with `depends_on` another resource, all data source in this module would be defer to the apply time, which causes `data.azapi_client_config.current`'s values be `known after apply`). Changing this forces a new resource to be created.
+
+Type: `string`
 
 Default: `null`
 
@@ -950,6 +989,14 @@ map(object({
 
 Default: `null`
 
+### <a name="input_secrets_version"></a> [secrets\_version](#input\_secrets\_version)
+
+Description: Version number for the secrets. Must set this version number to a different value to trigger an update on secrets. Defaults to `0`.
+
+Type: `number`
+
+Default: `0`
+
 ### <a name="input_service"></a> [service](#input\_service)
 
 Description: Service configuration for the Container App.
@@ -978,19 +1025,19 @@ Default: `null`
 
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
-Description: - `create` - (Defaults to 30 minutes) Used when creating the Container App.
-- `delete` - (Defaults to 30 minutes) Used when deleting the Container App.
-- `read` - (Defaults to 5 minutes) Used when retrieving the Container App.
-- `update` - (Defaults to 30 minutes) Used when updating the Container App.
+Description: - `create` - (Defaults to 30 minutes) Used when creating the Container App. Defaults to `30m`.
+- `delete` - (Defaults to 30 minutes) Used when deleting the Container App. Defaults to `30m`.
+- `read` - (Defaults to 5 minutes) Used when retrieving the Container App. Defaults to `5m`.
+- `update` - (Defaults to 30 minutes) Used when updating the Container App. Defaults to `30m`.
 
 Type:
 
 ```hcl
 object({
-    create = optional(string)
-    delete = optional(string)
-    read   = optional(string)
-    update = optional(string)
+    create = optional(string, "30m")
+    delete = optional(string, "30m")
+    read   = optional(string, "5m")
+    update = optional(string, "30m")
   })
 ```
 

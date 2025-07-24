@@ -195,7 +195,6 @@ module "container_apps" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  location                              = azurerm_resource_group.test.location
   name                                  = "nginx"
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -208,6 +207,7 @@ module "container_apps" {
       }
     ]
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = false
     external_enabled           = true

@@ -30,7 +30,6 @@ module "counting" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  location                              = azurerm_resource_group.test.location
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -75,6 +74,7 @@ module "counting" {
       }
     }
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = true
     client_certificate_mode    = "ignore"
@@ -92,13 +92,16 @@ module "counting" {
       value = "very_secret"
     }
   }
+
+  depends_on = [
+    azurerm_resource_group.test,
+  ]
 }
 
 module "dashboard" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  location                              = azurerm_resource_group.test.location
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -125,7 +128,7 @@ module "dashboard" {
           port                  = 8080
           transport             = "HTTP"
         }]
-        startup_probes = [{
+        startup_probe = [{
           initial_delay_seconds = 5
           period_seconds        = 10
           transport             = "HTTP"
@@ -141,6 +144,7 @@ module "dashboard" {
       },
     ]
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = false
     client_certificate_mode    = "ignore"
@@ -156,4 +160,8 @@ module "dashboard" {
     system_assigned = true
   }
   revision_mode = "Single"
+
+  depends_on = [
+    azurerm_resource_group.test,
+  ]
 }

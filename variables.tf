@@ -4,12 +4,6 @@ variable "container_app_environment_resource_id" {
   nullable    = false
 }
 
-variable "location" {
-  type        = string
-  description = "Azure region where the resource should be deployed.  If null, the location will be inferred from the resource group location."
-  nullable    = false
-}
-
 variable "name" {
   type        = string
   description = "The name of the Container App."
@@ -28,11 +22,13 @@ variable "resource_group_name" {
 
 variable "template" {
   type = object({
-    cooldown_period                  = optional(number, 300)
-    max_replicas                     = optional(number, 10)
-    min_replicas                     = optional(number)
-    polling_interval                 = optional(number, 30)
-    revision_suffix                  = optional(string)
+    cooldown_period = optional(number, 300)
+    max_replicas    = optional(number, 10)
+    #TODO:Set `min_replicas` default value to `0` in `v1.0.0`
+    min_replicas     = optional(number)
+    polling_interval = optional(number, 30)
+    revision_suffix  = optional(string)
+    #TODO:Set `termination_grace_period_seconds` default value to `0` in `v1.0.0`
     termination_grace_period_seconds = optional(number)
 
     azure_queue_scale_rules = optional(list(object({
@@ -59,14 +55,14 @@ variable "template" {
         value       = optional(string)
       })))
       liveness_probes = optional(list(object({
-        failure_count_threshold          = optional(number)
+        failure_count_threshold          = optional(number, 3)
         host                             = optional(string)
-        initial_delay                    = optional(number)
-        interval_seconds                 = optional(number)
+        initial_delay                    = optional(number, 1)
+        interval_seconds                 = optional(number, 10)
         path                             = optional(string)
         port                             = number
         termination_grace_period_seconds = optional(number)
-        timeout                          = optional(number)
+        timeout                          = optional(number, 1)
         transport                        = string
         header = optional(list(object({
           name  = string
@@ -74,29 +70,45 @@ variable "template" {
         })))
       })))
       readiness_probes = optional(list(object({
-        failure_count_threshold = optional(number)
+        failure_count_threshold = optional(number, 3)
         host                    = optional(string)
-        initial_delay           = optional(number)
-        interval_seconds        = optional(number)
+        initial_delay           = optional(number, 0)
+        interval_seconds        = optional(number, 10)
         path                    = optional(string)
         port                    = number
-        success_count_threshold = optional(number)
-        timeout                 = optional(number)
+        success_count_threshold = optional(number, 3)
+        timeout                 = optional(number, 1)
         transport               = string
         header = optional(list(object({
           name  = string
           value = string
         })))
       })))
-      startup_probes = optional(list(object({
-        failure_count_threshold          = optional(number)
+      #TODO:Remove startup_probe in v1.0.0
+      startup_probe = optional(list(object({
+        failure_count_threshold          = optional(number, 3)
         host                             = optional(string)
-        initial_delay                    = optional(number)
-        interval_seconds                 = optional(number)
+        initial_delay                    = optional(number, 0)
+        interval_seconds                 = optional(number, 10)
         path                             = optional(string)
         port                             = number
         termination_grace_period_seconds = optional(number)
-        timeout                          = optional(number)
+        timeout                          = optional(number, 1)
+        transport                        = string
+        header = optional(list(object({
+          name  = string
+          value = string
+        })))
+      })))
+      startup_probes = optional(list(object({
+        failure_count_threshold          = optional(number, 3)
+        host                             = optional(string)
+        initial_delay                    = optional(number, 0)
+        interval_seconds                 = optional(number, 10)
+        path                             = optional(string)
+        port                             = number
+        termination_grace_period_seconds = optional(number)
+        timeout                          = optional(number, 1)
         transport                        = string
         header = optional(list(object({
           name  = string
@@ -171,7 +183,7 @@ variable "template" {
         secret_name = string
       })))
       storage_name = optional(string)
-      storage_type = optional(string)
+      storage_type = optional(string, "EmptyDir")
     })))
   })
   description = <<-EOT
@@ -239,6 +251,17 @@ variable "template" {
  `header` block supports the following:
  - `name` - (Required) The HTTP Header Name.
  - `value` - (Required) The HTTP Header value.
+
+---
+ `startup_probe` block has been deprecated and would be removed in `v1`, please use `startup_probes` instead! `startup_probe` block supports the following:
+ - `failure_count_threshold` - (Optional) The number of consecutive failures required to consider this probe as failed. Possible values are between `1` and `10`. Defaults to `3`.
+ - `host` - (Optional) The value for the host header which should be sent with this probe. If unspecified, the IP Address of the Pod is used as the host header. Setting a value for `Host` in `headers` can be used to override this for `HTTP` and `HTTPS` type probes.
+ - `initial_delay` - (Optional) The number of seconds elapsed after the container has started before the probe is initiated. Possible values are between `0` and `60`. Defaults to `0` seconds.
+ - `interval_seconds` - (Optional) How often, in seconds, the probe should run. Possible values are between `1` and `240`. Defaults to `10`
+ - `path` - (Optional) The URI to use with the `host` for http type probes. Not valid for `TCP` type probes. Defaults to `/`.
+ - `port` - (Required) The port number on which to connect. Possible values are between `1` and `65535`.
+ - `timeout` - (Optional) Time in seconds after which the probe times out. Possible values are in the range `1`
+ - `transport` - (Required) Type of probe. Possible values are `TCP`, `HTTP`, and `HTTPS`.
 
  ---
  `startup_probes` block supports the following:
@@ -319,6 +342,68 @@ variable "template" {
  - `storage_type` - (Optional) The type of storage volume. Possible values are `AzureFile`, `EmptyDir` and `Secret`. Defaults to `EmptyDir`.
 EOT
   nullable    = false
+
+  validation {
+    condition     = alltrue([for c in var.template.containers : c.startup_probe == null || c.startup_probes == null])
+    error_message = "You can only use either `startup_probe` or `startup_probes` in the `containers` block, not both. The `startup_probe` block has been deprecated and would be removed in v1."
+  }
+  validation {
+    condition = try(var.template.volumes == null ? true : alltrue([
+      for volume in var.template.volumes :
+      volume.storage_type == null ? true : contains(["AzureFile", "EmptyDir", "Secret"], volume.storage_type)
+    ]), true)
+    error_message = "Possible values for `template.volumes.storage_type` are `AzureFile`, `EmptyDir`, and `Secret`."
+  }
+  validation {
+    condition = try(var.template.containers == null ? true : alltrue(flatten([
+      for container in var.template.containers :
+      container.liveness_probes == null ? [true] : [
+        for probe in container.liveness_probes :
+        contains(["TCP", "HTTP", "HTTPS"], probe.transport)
+      ]
+    ])), true)
+    error_message = "Possible values for `template.containers.liveness_probes.transport` are `TCP`, `HTTP`, and `HTTPS`."
+  }
+  validation {
+    condition = try(var.template.containers == null ? true : alltrue(flatten([
+      for container in var.template.containers :
+      container.readiness_probes == null ? [true] : [
+        for probe in container.readiness_probes :
+        contains(["TCP", "HTTP", "HTTPS"], probe.transport)
+      ]
+    ])), true)
+    error_message = "Possible values for `template.containers.readiness_probes.transport` are `TCP`, `HTTP`, and `HTTPS`."
+  }
+  validation {
+    condition = try(var.template.containers == null ? true : alltrue(flatten([
+      for container in var.template.containers :
+      container.startup_probes == null ? [true] : [
+        for probe in container.startup_probes :
+        contains(["TCP", "HTTP", "HTTPS"], probe.transport)
+      ]
+    ])), true)
+    error_message = "Possible values for `template.containers.startup_probes.transport` are `TCP`, `HTTP`, and `HTTPS`."
+  }
+  validation {
+    condition = try(var.template.custom_scale_rules == null ? true : alltrue([
+      for rule in var.template.custom_scale_rules :
+      contains([
+        "activemq", "artemis-queue", "kafka", "pulsar", "aws-cloudwatch",
+        "aws-dynamodb", "aws-dynamodb-streams", "aws-kinesis-stream", "aws-sqs-queue",
+        "azure-app-insights", "azure-blob", "azure-data-explorer", "azure-eventhub",
+        "azure-log-analytics", "azure-monitor", "azure-pipelines", "azure-servicebus",
+        "azure-queue", "cassandra", "cpu", "cron", "datadog", "elasticsearch", "external",
+        "external-push", "gcp-stackdriver", "gcp-storage", "gcp-pubsub", "graphite", "http",
+        "huawei-cloudeye", "ibmmq", "influxdb", "kubernetes-workload", "liiklus", "memory",
+        "metrics-api", "mongodb", "mssql", "mysql", "nats-jetstream", "stan", "tcp", "new-relic",
+        "openstack-metric", "openstack-swift", "postgresql", "predictkube", "prometheus",
+        "rabbitmq", "redis", "redis-cluster", "redis-sentinel", "redis-streams",
+        "redis-cluster-streams", "redis-sentinel-streams", "selenium-grid",
+        "solace-event-queue", "github-runner",
+      ], rule.custom_rule_type)
+    ]), true)
+    error_message = "Invalid custom_rule_type. Please refer to the documentation for the list of supported custom rule types."
+  }
 }
 
 variable "auth_configs" {
@@ -620,22 +705,32 @@ variable "dapr" {
     - `http_read_buffer_size` - (Optional) The size of the buffer used for reading the HTTP request body in bytes.
     - `log_level` - (Optional) The log level for Dapr. Possible values include "debug", "info", "warn", "error", and "fatal".
   EOT
+
+  validation {
+    condition     = var.dapr == null ? true : contains(["http", "grpc"], var.dapr.app_protocol)
+    error_message = "Possible values for `dapr.app_protocol` are `http` and `grpc`."
+  }
+  validation {
+    condition     = var.dapr == null ? true : contains(["debug", "info", "warn", "error"], var.dapr.log_level)
+    error_message = "Possible values for `dapr.log_level` are `debug`, `info`, `warn`, and `error`."
+  }
 }
 
 variable "enable_telemetry" {
   type        = bool
-  default     = false
+  default     = true
   description = <<DESCRIPTION
 This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetryinfo.
+For more information see <https://aka.ms/avm/telemetryinfo>.
 If it is set to false, then no telemetry will be collected.
 DESCRIPTION
+  nullable    = false
 }
 
 variable "identity_settings" {
   type = list(object({
     identity  = string
-    lifecycle = string
+    lifecycle = optional(string, "All")
   }))
   default     = null
   description = <<-EOT
@@ -644,18 +739,33 @@ variable "identity_settings" {
     ---
     `identity_settings` block supports the following:
     - `identity` - (Required) The resource ID of the user-assigned managed identity.
-    - `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, and `Retain`.
+    - `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, `Retain` and `All`. Defaults to `All`.
   EOT
+
+  validation {
+    condition = try(var.identity_settings == null ? true : alltrue([
+      for setting in var.identity_settings :
+      setting == null ? true : contains(["Init", "None", "Retain", "All"], setting.lifecycle)
+    ]), true)
+    error_message = "Possible values for `identity_settings.lifecycle` are `Init`, `None`, `Retain` and `All`."
+  }
 }
 
 variable "ingress" {
   type = object({
     allow_insecure_connections = optional(bool, false)
-    client_certificate_mode    = optional(string, "Ignore")
+    client_certificate_mode    = optional(string)
     exposed_port               = optional(number, 0)
     external_enabled           = optional(bool, false)
     target_port                = optional(number)
-    transport                  = optional(string, "Auto")
+    transport                  = optional(string, "auto")
+
+    traffic_weight = list(object({
+      label           = optional(string)
+      latest_revision = optional(bool, false)
+      revision_suffix = optional(string)
+      percentage      = number
+    }))
 
     additional_port_mappings = optional(list(object({
       exposed_port = number
@@ -688,14 +798,6 @@ variable "ingress" {
     sticky_sessions = optional(object({
       affinity = optional(string, "none")
     }))
-
-    traffic_weight = optional(list(object({
-      label           = optional(string)
-      latest_revision = optional(bool, true)
-      revision_suffix = optional(string)
-      percentage      = optional(number, 100)
-    })))
-
   })
   default     = null
   description = <<DESCRIPTION
@@ -703,11 +805,18 @@ variable "ingress" {
 This object defines the ingress properties for the container app:
 
 - `allow_insecure_connections` - (Optional) Should this ingress allow insecure connections? Defaults to `false`.
-- `client_certificate_mode` - (Optional) The mode for client certificate authentication. Possible values include `optional` and `required`. Defaults to `Ignore`.
+- `client_certificate_mode` - (Optional) The mode for client certificate authentication. Possible values include `optional` and `required`.
 - `exposed_port` - (Optional) The exposed port on the container for the Ingress traffic. Defaults to `0`.
 - `external_enabled` - (Optional) Are connections to this Ingress from outside the Container App Environment enabled? Defaults to `false`.
 - `target_port` - (Required) The target port on the container for the Ingress traffic. Defaults to `Auto`.
-- `transport` - (Optional) The transport method for the Ingress. Possible values include `auto`, `http`, `http2`, and `tcp`. Defaults to `Auto`.
+- `transport` - (Optional) The transport method for the Ingress. Possible values include `auto`, `http`, `http2`, and `tcp`. Defaults to `auto`.
+
+---
+`traffic_weight` block supports the following:
+- `label` - (Optional) The label to apply to the revision as a name prefix for routing traffic.
+- `latest_revision` - (Optional) This traffic Weight relates to the latest stable Container Revision. Defaults to `false`.
+- `revision_suffix` - (Optional) The suffix string to which this `traffic_weight` applies.
+- `percentage` - (Required) The percentage of traffic which should be sent according to this configuration.
 
 ---
 `cors_policy` block supports the following:
@@ -735,14 +844,34 @@ This object defines the ingress properties for the container app:
 `sticky_sessions` block supports the following:
 - `affinity` - (Optional) The affinity type for sticky sessions. Possible values include `None`, `ClientIP`, and `Server`.
 
----
-`traffic_weight` block supports the following:
-- `label` - (Optional) The label to apply to the revision as a name prefix for routing traffic.
-- `latest_revision` - (Optional) This traffic Weight relates to the latest stable Container Revision.
-- `revision_suffix` - (Optional) The suffix string to which this `traffic_weight` applies.
-- `percentage` - (Required) The percentage of traffic which should be sent according to this configuration.
-
 DESCRIPTION
+
+  validation {
+    condition     = try(var.ingress.client_certificate_mode == null ? true : contains(["accept", "ignore", "require"], var.ingress.client_certificate_mode), true)
+    error_message = "Possible values for `ingress.client_certificate_mode` are `require`, `accept`, and `ignore`."
+  }
+  validation {
+    condition     = try(var.ingress.transport == null ? true : contains(["auto", "http", "http2", "tcp"], var.ingress.transport), true)
+    error_message = "Possible values for `ingress.transport` are `auto`, `http`, `http2`, and `tcp`."
+  }
+  validation {
+    condition = try(var.ingress.ip_restrictions == null ? true : alltrue([
+      for ip_restriction in var.ingress.ip_restrictions :
+      ip_restriction.action == null ? true : contains(["Allow", "Deny"], ip_restriction.action)
+    ]), true)
+    error_message = "Possible values for `ingress.ip_restrictions.action` are `Allow` and `Deny`."
+  }
+  validation {
+    condition     = try(var.ingress.sticky_sessions == null ? true : (var.ingress.sticky_sessions.affinity == null ? true : contains(["none", "sticky"], var.ingress.sticky_sessions.affinity)), true)
+    error_message = "Possible values for `ingress.sticky_sessions.affinity` are `none` and `sticky`."
+  }
+}
+
+variable "location" {
+  type = string
+  #TODO:Remove default value in v1.0.0
+  default     = null
+  description = "Azure region where the resource should be deployed. If null, the location will be inferred from the resource group location. This variable would be required in v1.0.0."
 }
 
 # required AVM interfaces
@@ -782,7 +911,7 @@ DESCRIPTION
 
 variable "max_inactive_revisions" {
   type        = number
-  default     = 2
+  default     = 0
   description = "(Optional). Max inactive revisions a Container App can have."
 }
 
@@ -804,10 +933,21 @@ variable "registries" {
 EOT
 }
 
+variable "resource_group_id" {
+  type        = string
+  default     = null
+  description = "(Optional) The id of the resource group in which the Container App Environment is to be created. Set only when you see recreation in Terraform plan caused by known after apply value assigned to `azapi_resource.container_app.parent_id`(when use this module along with `depends_on` another resource, all data source in this module would be defer to the apply time, which causes `data.azapi_client_config.current`'s values be `known after apply`). Changing this forces a new resource to be created."
+}
+
 variable "revision_mode" {
   type        = string
   default     = "Single"
   description = "(Required) The revisions operational mode for the Container App. Possible values include `Single` and `Multiple`. In `Single` mode, a single revision is in operation at any given time. In `Multiple` mode, more than one revision can be active at a time and can be configured with load distribution via the `traffic_weight` block in the `ingress` configuration."
+
+  validation {
+    condition     = contains(["Single", "Multiple"], var.revision_mode)
+    error_message = "Possible values for `revision_mode` are `Single` and `Multiple`."
+  }
 }
 
 variable "role_assignments" {
@@ -877,6 +1017,13 @@ variable "secrets" {
 EOT
 }
 
+variable "secrets_version" {
+  type        = number
+  default     = 0
+  description = "Version number for the secrets. Must set this version number to a different value to trigger an update on secrets. Defaults to `0`."
+  nullable    = false
+}
+
 variable "service" {
   type = object({
     type = string
@@ -899,17 +1046,17 @@ variable "tags" {
 
 variable "timeouts" {
   type = object({
-    create = optional(string)
-    delete = optional(string)
-    read   = optional(string)
-    update = optional(string)
+    create = optional(string, "30m")
+    delete = optional(string, "30m")
+    read   = optional(string, "5m")
+    update = optional(string, "30m")
   })
   default     = null
   description = <<-EOT
- - `create` - (Defaults to 30 minutes) Used when creating the Container App.
- - `delete` - (Defaults to 30 minutes) Used when deleting the Container App.
- - `read` - (Defaults to 5 minutes) Used when retrieving the Container App.
- - `update` - (Defaults to 30 minutes) Used when updating the Container App.
+ - `create` - (Defaults to 30 minutes) Used when creating the Container App. Defaults to `30m`.
+ - `delete` - (Defaults to 30 minutes) Used when deleting the Container App. Defaults to `30m`.
+ - `read` - (Defaults to 5 minutes) Used when retrieving the Container App. Defaults to `5m`.
+ - `update` - (Defaults to 30 minutes) Used when updating the Container App. Defaults to `30m`.
 EOT
 }
 

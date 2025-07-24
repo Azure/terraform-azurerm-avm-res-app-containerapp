@@ -1,5 +1,17 @@
+locals {
+  sensitive_body_present = try(nonsensitive(anytrue([for item in local.sensitive_inputs : item != null])), false)
+  sensitive_inputs = [
+    var.secrets
+  ]
+}
+
+moved {
+  from = azurerm_container_app.this
+  to   = azapi_resource.container_app
+}
+
 resource "azapi_resource" "container_app" {
-  location  = var.location
+  location  = local.main_location
   name      = var.name
   parent_id = local.resource_group_id
   type      = "Microsoft.App/containerApps@2025-01-01"
@@ -23,9 +35,9 @@ resource "azapi_resource" "container_app" {
             lifecycle = is.lifecycle
           }
         ] : []
-        ingress = var.ingress != null ? {
+        ingress = var.ingress == null ? null : {
           allowInsecure         = var.ingress.allow_insecure_connections
-          clientCertificateMode = title(var.ingress.client_certificate_mode)
+          clientCertificateMode = try(title(var.ingress.client_certificate_mode), null)
           exposedPort           = var.ingress.exposed_port
           external              = var.ingress.external_enabled
           targetPort            = var.ingress.target_port
@@ -38,12 +50,14 @@ resource "azapi_resource" "container_app" {
             }
           ] : null
           corsPolicy = var.ingress.cors_policy != null ? {
-            allowCredentials = var.ingress.cors_policy.allow_credentials
-            allowedHeaders   = var.ingress.cors_policy.allowed_headers
-            allowedMethods   = var.ingress.cors_policy.allowed_methods
-            allowedOrigins   = var.ingress.cors_policy.allowed_origins
-            exposeHeaders    = var.ingress.cors_policy.expose_headers
-            maxAge           = var.ingress.cors_policy.max_age
+            for k, v in {
+              allowCredentials = var.ingress.cors_policy.allow_credentials
+              allowedHeaders   = var.ingress.cors_policy.allowed_headers
+              allowedMethods   = var.ingress.cors_policy.allowed_methods
+              allowedOrigins   = var.ingress.cors_policy.allowed_origins
+              exposeHeaders    = var.ingress.cors_policy.expose_headers
+              maxAge           = var.ingress.cors_policy.max_age
+            } : k => v if v != null
           } : null
           customDomains = var.ingress.custom_domain != null ? [
             {
@@ -63,12 +77,7 @@ resource "azapi_resource" "container_app" {
           stickySessions = var.ingress.sticky_sessions != null ? {
             affinity = var.ingress.sticky_sessions.affinity
           } : null
-          traffic = var.ingress.traffic_weight == null ? [{
-            label          = ""
-            latestRevision = true
-            revisionName   = ""
-            weight         = 100
-            }] : [
+          traffic = [
             for weight in var.ingress.traffic_weight : {
               label          = weight.label
               latestRevision = weight.latest_revision
@@ -76,7 +85,7 @@ resource "azapi_resource" "container_app" {
               weight         = weight.percentage
             }
           ]
-        } : null
+        }
         maxInactiveRevisions = var.max_inactive_revisions
         registries = var.registries != null ? [
           for reg in var.registries : {
@@ -91,30 +100,23 @@ resource "azapi_resource" "container_app" {
             enableMetrics = var.runtime.java.enable_metrics
           } : null
         } : null
-        secrets = var.secrets != null ? [
-          for s in var.secrets : {
-            identity    = s.identity
-            keyVaultUrl = s.key_vault_secret_id
-            name        = s.name
-            value       = s.value
-          }
-        ] : null
         service = var.service != null ? {
           type = var.service.type
         } : null
       }
-      environmentId = var.container_app_environment_resource_id
+      environmentId        = var.container_app_environment_resource_id
+      managedEnvironmentId = var.container_app_environment_resource_id
       template = {
         containers = [
-          for cont in var.template.containers : {
+          for cont in var.template.containers : { for k, v in {
             args    = cont.args
             command = cont.command
             env = cont.env != null ? [
-              for e in cont.env : {
+              for e in cont.env : { for k, v in {
                 name      = e.name
                 secretRef = e.secret_name
                 value     = e.value
-              }
+              } : k => v if v != null }
             ] : null
             image  = cont.image
             name   = cont.name
@@ -130,48 +132,48 @@ resource "azapi_resource" "container_app" {
                 volumeName = vm.name
               }
             ] : null
-          }
+          } : k => v if v != null }
         ]
         initContainers = var.template.init_containers != null ? [
           for init_cont in var.template.init_containers : {
             args    = init_cont.args
             command = init_cont.command
             env = init_cont.env != null ? [
-              for e in init_cont.env : {
+              for e in init_cont.env : { for k, v in {
                 name      = e.name
                 secretRef = e.secret_name
                 value     = e.value
-              }
+              } : k => v if v != null }
             ] : null
             image = init_cont.image
             name  = init_cont.name
-            resources = {
+            resources = { for k, v in {
               cpu    = init_cont.cpu
               memory = init_cont.memory
-            }
+            } : k => v if v != null }
             volumeMounts = init_cont.volume_mounts != null ? [
-              for vm in init_cont.volume_mounts : {
+              for vm in init_cont.volume_mounts : { for k, v in {
                 mountPath  = vm.path
                 subPath    = vm.sub_path
                 volumeName = vm.name
-              }
+              } : k => v if v != null }
             ] : null
           }
         ] : null
         revisionSuffix = var.template.revision_suffix
-        scale = {
+        scale = { for k, v in {
           minReplicas = var.template.min_replicas
           maxReplicas = var.template.max_replicas
           # Add missing scale properties
           cooldownPeriod  = var.template.cooldown_period
           pollingInterval = var.template.polling_interval
           rules           = length(local.scale_rules) > 0 ? local.scale_rules : null
-        }
+        } : k => v if v != null }
         serviceBinds = var.template.service_binds != null ? [
-          for sb in var.template.service_binds : {
+          for sb in var.template.service_binds : { for k, v in {
             name      = sb.name
             serviceId = sb.service_id
-          }
+          } : k => v if v != null }
         ] : null
         terminationGracePeriodSeconds = var.template.termination_grace_period_seconds
         volumes = var.template.volumes != null ? [
@@ -187,33 +189,41 @@ resource "azapi_resource" "container_app" {
               }
             ] : null
           }
-        ] : null
+        ] : []
       }
       workloadProfileName = var.workload_profile_name
     }
   }
-  response_export_values = [
-    "identity",
-    "location",
-    "properties.environmentId",
-    "properties.latestRevisionName",
-    "properties.latestReadyRevisionName",
-    "properties.latestRevisionFqdn",
-    "properties.configuration.ingress.customDomains",
-    "properties.configuration.ingress.fqdn",
-    "properties.customDomainVerificationId",
-    "properties.outboundIpAddresses",
-    "properties.revisionSuffix",
-  ]
-  schema_validation_enabled = true
-  tags                      = var.tags
+  create_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  read_headers              = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  response_export_values    = ["*"]
+  schema_validation_enabled = false
+  sensitive_body = local.sensitive_body_present ? {
+    properties = {
+      configuration = {
+        secrets = var.secrets != null ? [
+          for s in var.secrets : {
+            identity    = s.identity
+            keyVaultUrl = s.key_vault_secret_id
+            name        = s.name
+            value       = s.value
+          }
+        ] : null
+    } }
+  } : null
+  sensitive_body_version = local.sensitive_body_present ? merge(nonsensitive(var.secrets == null) ? {} : {
+    "properties.configuration.secrets" = var.secrets_version
+  }, {}) : null
+  tags           = var.tags
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "identity" {
-    for_each = module.avm_interfaces.managed_identities_azapi == null ? [0] : [1]
+    for_each = module.avm_interfaces.managed_identities_azapi == null ? [] : [1]
 
     content {
-      type         = try(module.avm_interfaces.managed_identities_azapi.type, "None")
-      identity_ids = try(module.avm_interfaces.managed_identities_azapi.identity_ids, [])
+      type         = module.avm_interfaces.managed_identities_azapi.type
+      identity_ids = module.avm_interfaces.managed_identities_azapi.identity_ids
     }
   }
   dynamic "timeouts" {
@@ -230,11 +240,9 @@ resource "azapi_resource" "container_app" {
   lifecycle {
     ignore_changes = [
       body.properties.template.revisionSuffix,
+      body.properties.managedEnvironmentId,
+      schema_validation_enabled,
+      response_export_values,
     ]
   }
-}
-
-moved {
-  from = azurerm_container_app.this
-  to   = azapi_resource.container_app
 }

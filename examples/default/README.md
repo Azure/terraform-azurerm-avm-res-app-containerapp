@@ -36,7 +36,6 @@ module "counting" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  location                              = azurerm_resource_group.test.location
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -81,6 +80,7 @@ module "counting" {
       }
     }
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = true
     client_certificate_mode    = "ignore"
@@ -98,13 +98,16 @@ module "counting" {
       value = "very_secret"
     }
   }
+
+  depends_on = [
+    azurerm_resource_group.test,
+  ]
 }
 
 module "dashboard" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  location                              = azurerm_resource_group.test.location
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -131,7 +134,7 @@ module "dashboard" {
           port                  = 8080
           transport             = "HTTP"
         }]
-        startup_probes = [{
+        startup_probe = [{
           initial_delay_seconds = 5
           period_seconds        = 10
           transport             = "HTTP"
@@ -147,6 +150,7 @@ module "dashboard" {
       },
     ]
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = false
     client_certificate_mode    = "ignore"
@@ -162,6 +166,10 @@ module "dashboard" {
     system_assigned = true
   }
   revision_mode = "Single"
+
+  depends_on = [
+    azurerm_resource_group.test,
+  ]
 }
 ```
 
@@ -209,15 +217,7 @@ The following outputs are exported:
 
 ### <a name="output_dashboard_url"></a> [dashboard\_url](#output\_dashboard\_url)
 
-Description: n/a
-
-### <a name="output_latest_revision_fqdn"></a> [latest\_revision\_fqdn](#output\_latest\_revision\_fqdn)
-
-Description: n/a
-
-### <a name="output_latest_revision_name"></a> [latest\_revision\_name](#output\_latest\_revision\_name)
-
-Description: n/a
+Description: output "latest\_revision\_fqdn" { value = module.dashboard.latest\_revision\_fqdn }  output "latest\_revision\_name" { value = module.dashboard.latest\_revision\_name }
 
 ## Modules
 

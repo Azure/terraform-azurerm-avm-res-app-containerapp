@@ -25,7 +25,6 @@ module "app" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  location                              = azurerm_resource_group.test.location
   name                                  = "testapp"
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -57,6 +56,7 @@ module "app" {
       }
     }
   }
+  enable_telemetry = false
   ingress = {
     allow_insecure_connections = true
     external_enabled           = true
@@ -67,6 +67,7 @@ module "app" {
       percentage      = 100
     }]
   }
+  location      = azurerm_resource_group.test.location
   revision_mode = "Single"
   secrets = {
     facebook_secret = {
