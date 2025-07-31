@@ -16,7 +16,7 @@ resource "azapi_resource" "role_assignments" {
   for_each = module.avm_interfaces.role_assignments_azapi
 
   name           = each.value.name
-  parent_id      = local.resource_group_id
+  parent_id      = azapi_resource.container_app.id
   type           = each.value.type
   body           = each.value.body
   create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
@@ -29,7 +29,7 @@ resource "azapi_resource" "lock" {
   count = var.lock != null ? 1 : 0
 
   name           = module.avm_interfaces.lock_azapi.name != null ? module.avm_interfaces.lock_azapi.name : "lock-${azapi_resource.container_app.name}"
-  parent_id      = local.resource_group_id
+  parent_id      = azapi_resource.container_app.id
   type           = module.avm_interfaces.lock_azapi.type
   body           = module.avm_interfaces.lock_azapi.body
   create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
