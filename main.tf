@@ -212,9 +212,6 @@ resource "azapi_resource" "container_app" {
         ] : null
     } }
   } : null
-  sensitive_body_version = local.sensitive_body_present ? merge(nonsensitive(var.secrets == null) ? {} : {
-    "properties.configuration.secrets" = var.secrets_version
-  }, {}) : null
   tags           = var.tags
   update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 

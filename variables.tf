@@ -1017,13 +1017,6 @@ variable "secrets" {
 EOT
 }
 
-variable "secrets_version" {
-  type        = number
-  default     = 0
-  description = "Version number for the secrets. Must set this version number to a different value to trigger an update on secrets. Defaults to `0`."
-  nullable    = false
-}
-
 variable "service" {
   type = object({
     type = string
