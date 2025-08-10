@@ -990,14 +990,6 @@ map(object({
 
 Default: `null`
 
-### <a name="input_secrets_version"></a> [secrets\_version](#input\_secrets\_version)
-
-Description: Version number for the secrets. Must set this version number to a different value to trigger an update on secrets. Defaults to `0`.
-
-Type: `number`
-
-Default: `0`
-
 ### <a name="input_service"></a> [service](#input\_service)
 
 Description: Service configuration for the Container App.
