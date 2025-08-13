@@ -59,13 +59,24 @@ resource "azapi_resource" "container_app" {
               maxAge           = var.ingress.cors_policy.max_age
             } : k => v if v != null
           } : null
-          customDomains = var.ingress.custom_domain != null ? [
-            {
-              bindingType   = var.ingress.custom_domain.certificate_binding_type
-              certificateId = var.ingress.custom_domain.certificate_id
-              name          = var.ingress.custom_domain.name
-            }
-          ] : null
+          customDomains = (var.ingress.custom_domain != null || length(var.ingress.custom_domains) > 0) ? concat(
+            # Legacy single domain support (deprecated)
+            var.ingress.custom_domain != null ? [
+              {
+                bindingType   = var.ingress.custom_domain.certificate_binding_type
+                certificateId = var.ingress.custom_domain.certificate_id
+                name          = var.ingress.custom_domain.name
+              }
+            ] : [],
+            # New multiple domains support
+            length(var.ingress.custom_domains) > 0 ? [
+              for domain in var.ingress.custom_domains : {
+                bindingType   = domain.certificate_binding_type
+                certificateId = domain.certificate_id
+                name          = domain.name
+              }
+            ] : []
+          ) : null
           ipSecurityRestrictions = var.ingress.ip_restrictions != null ? [
             for ipr in var.ingress.ip_restrictions : {
               action         = ipr.action
