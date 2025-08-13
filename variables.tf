@@ -782,11 +782,18 @@ variable "ingress" {
       max_age           = optional(number)
     }), null)
 
+    # TODO: Remove custom_domain in v1.0.0 - replaced by custom_domains list
     custom_domain = optional(object({
       certificate_binding_type = optional(string)
       certificate_id           = optional(string)
       name                     = optional(string)
     }))
+
+    custom_domains = optional(list(object({
+      certificate_binding_type = optional(string)
+      certificate_id           = optional(string)
+      name                     = string
+    })), [])
 
     ip_restrictions = optional(list(object({
       action      = optional(string)
@@ -828,10 +835,16 @@ This object defines the ingress properties for the container app:
 - `max_age` - (Optional) The maximum number of seconds the results of a preflight request can be cached.
 
 ---
-`custom_domain` block supports the following:
+`custom_domain` block supports the following (DEPRECATED - use custom_domains instead):
 - `certificate_binding_type` - (Optional) The Binding type. Possible values include `Disabled` and `SniEnabled`. Defaults to `Disabled`.
 - `certificate_id` - (Optional) The ID of the Container App Environment Certificate.
 - `name` - (Optional) The hostname of the Certificate. Must be the CN or a named SAN in the certificate.
+
+---
+`custom_domains` block supports the following:
+- `certificate_binding_type` - (Optional) The Binding type. Possible values include `Disabled` and `SniEnabled`. Defaults to `Disabled`.
+- `certificate_id` - (Optional) The ID of the Container App Environment Certificate.
+- `name` - (Required) The hostname of the Certificate. Must be the CN or a named SAN in the certificate.
 
 ---
 `ip_restrictions` block supports the following:
@@ -864,6 +877,23 @@ DESCRIPTION
   validation {
     condition     = try(var.ingress.sticky_sessions == null ? true : (var.ingress.sticky_sessions.affinity == null ? true : contains(["none", "sticky"], var.ingress.sticky_sessions.affinity)), true)
     error_message = "Possible values for `ingress.sticky_sessions.affinity` are `none` and `sticky`."
+  }
+  validation {
+    condition = try(
+      var.ingress == null ? true :
+      !(var.ingress.custom_domain != null && length(var.ingress.custom_domains) > 0),
+      true
+    )
+    error_message = "Cannot specify both `custom_domain` (deprecated) and `custom_domains` at the same time. Please use only `custom_domains` for multiple domain support."
+  }
+  validation {
+    condition = try(
+      var.ingress == null ? true :
+      var.ingress.custom_domains == null ? true :
+      length(distinct([for d in var.ingress.custom_domains : d.name])) == length(var.ingress.custom_domains),
+      true
+    )
+    error_message = "All custom domain names must be unique within the `custom_domains` list."
   }
 }
 
