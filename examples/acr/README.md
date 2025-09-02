@@ -257,8 +257,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_docker"></a> [docker](#requirement\_docker) (3.6.2)
 
-- <a name="requirement_null"></a> [null](#requirement\_null) (>= 2.0.0)
-
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.0.0)
 
 ## Resources
