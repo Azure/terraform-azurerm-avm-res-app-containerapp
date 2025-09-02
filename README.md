@@ -988,7 +988,7 @@ Description:
 - `key_vault_secret_id` - (Optional) The URL of the Azure Key Vault containing the secret. Required when `identity` is specified.
 - `identity` - (Optional) The identity associated with the secret.
 - `name` - (Required) The secret name.
-- `value` - (Required) The value for this secret.
+- `value` - (Optional) The value for this secret. Required when `key_vault_secret_id` is not specified.
 
 Type:
 
@@ -997,7 +997,7 @@ map(object({
     identity            = optional(string)
     key_vault_secret_id = optional(string)
     name                = string
-    value               = string
+    value               = optional(string)
   }))
 ```
 

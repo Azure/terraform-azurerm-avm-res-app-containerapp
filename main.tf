@@ -214,12 +214,14 @@ resource "azapi_resource" "container_app" {
     properties = {
       configuration = {
         secrets = var.secrets != null ? [
-          for s in var.secrets : {
-            identity    = s.identity
-            keyVaultUrl = s.key_vault_secret_id
-            name        = s.name
-            value       = s.value
-          }
+          for s in var.secrets : merge(
+            {
+              identity = s.identity
+              name     = s.name
+            },
+            s.key_vault_secret_id != null ? { keyVaultUrl = s.key_vault_secret_id } : {},
+            s.value != null ? { value = s.value } : {}
+          )
         ] : null
     } }
   } : null

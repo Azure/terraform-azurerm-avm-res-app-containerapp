@@ -1034,7 +1034,7 @@ variable "secrets" {
     identity            = optional(string)
     key_vault_secret_id = optional(string)
     name                = string
-    value               = string
+    value               = optional(string)
   }))
   default     = null
   description = <<-EOT
@@ -1042,9 +1042,27 @@ variable "secrets" {
  - `key_vault_secret_id` - (Optional) The URL of the Azure Key Vault containing the secret. Required when `identity` is specified.
  - `identity` - (Optional) The identity associated with the secret.
  - `name` - (Required) The secret name.
- - `value` - (Required) The value for this secret.
+ - `value` - (Optional) The value for this secret. Required when `key_vault_secret_id` is not specified.
 
 EOT
+
+  validation {
+    condition = var.secrets == null ? true : alltrue([
+      for secret_key, secret in var.secrets : (
+        (secret.value != null && secret.key_vault_secret_id == null) ||
+        (secret.value == null && secret.key_vault_secret_id != null)
+      )
+    ])
+    error_message = "Each secret must have either 'value' or 'key_vault_secret_id' specified, but not both."
+  }
+  validation {
+    condition = var.secrets == null ? true : alltrue([
+      for secret_key, secret in var.secrets : (
+        secret.key_vault_secret_id != null ? secret.identity != null : true
+      )
+    ])
+    error_message = "When 'key_vault_secret_id' is specified, 'identity' must also be provided for authentication."
+  }
 }
 
 variable "service" {
