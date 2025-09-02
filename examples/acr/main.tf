@@ -10,12 +10,13 @@ resource "random_id" "container_name" {
   byte_length = 4
 }
 
-resource "null_resource" "docker_push" {
-  provisioner "local-exec" {
-    command = "docker login -u ${azurerm_container_registry_token.pushtoken.name} -p ${azurerm_container_registry_token_password.pushtokenpassword.password1[0].value} https://${azurerm_container_registry.acr.login_server}"
-  }
-  provisioner "local-exec" {
-    command = "docker push ${docker_tag.nginx.target_image}"
+resource "docker_registry_image" "remote" {
+  name          = docker_tag.nginx.target_image
+  keep_remotely = true
+  auth_config {
+    address  = "https://${azurerm_container_registry.acr.login_server}"
+    password = azurerm_container_registry_token_password.pushtokenpassword.password1[0].value
+    username = azurerm_container_registry_token.pushtoken.name
   }
 }
 
@@ -234,5 +235,5 @@ module "container_apps" {
     }
   }
 
-  depends_on = [null_resource.docker_push]
+  depends_on = [docker_registry_image.remote]
 }

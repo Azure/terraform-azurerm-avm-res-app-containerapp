@@ -17,12 +17,13 @@ resource "random_id" "container_name" {
   byte_length = 4
 }
 
-resource "null_resource" "docker_push" {
-  provisioner "local-exec" {
-    command = "docker login -u ${azurerm_container_registry_token.pushtoken.name} -p ${azurerm_container_registry_token_password.pushtokenpassword.password1[0].value} https://${azurerm_container_registry.acr.login_server}"
-  }
-  provisioner "local-exec" {
-    command = "docker push ${docker_tag.nginx.target_image}"
+resource "docker_registry_image" "remote" {
+  name          = docker_tag.nginx.target_image
+  keep_remotely = true
+  auth_config {
+    address  = "https://${azurerm_container_registry.acr.login_server}"
+    password = azurerm_container_registry_token_password.pushtokenpassword.password1[0].value
+    username = azurerm_container_registry_token.pushtoken.name
   }
 }
 
@@ -241,7 +242,7 @@ module "container_apps" {
     }
   }
 
-  depends_on = [null_resource.docker_push]
+  depends_on = [docker_registry_image.remote]
 }
 ```
 
@@ -254,7 +255,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
 
-- <a name="requirement_docker"></a> [docker](#requirement\_docker) (3.0.2)
+- <a name="requirement_docker"></a> [docker](#requirement\_docker) (3.6.2)
 
 - <a name="requirement_null"></a> [null](#requirement\_null) (>= 2.0.0)
 
@@ -278,9 +279,9 @@ The following resources are used by this module:
 - [azurerm_resource_group.test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [docker_image.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/3.0.2/docs/resources/image) (resource)
-- [docker_tag.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/3.0.2/docs/resources/tag) (resource)
-- [null_resource.docker_push](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) (resource)
+- [docker_image.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/image) (resource)
+- [docker_registry_image.remote](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/registry_image) (resource)
+- [docker_tag.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/tag) (resource)
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.env_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
