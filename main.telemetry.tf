@@ -23,6 +23,7 @@ resource "modtm_telemetry" "telemetry" {
     random_id       = one(random_uuid.telemetry).result
   }, { location = local.main_location })
 
+
 }
 locals {
   # tflint-ignore: terraform_unused_declarations
@@ -36,6 +37,7 @@ locals {
     "git::ssh:://git@github\\.com/[A|a]zure/.+",
   ]
 
+
 }
 
 locals {
@@ -48,6 +50,7 @@ locals {
     avm_module_source  = one(data.modtm_module_source.telemetry).module_source
     avm_module_version = one(data.modtm_module_source.telemetry).module_version
   })
+
 
 }
 

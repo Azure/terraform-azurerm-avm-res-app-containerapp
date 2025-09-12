@@ -33,7 +33,7 @@ provider "azurerm" {
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = ">= 0.3.0"
+  version = "0.8.2"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -42,14 +42,10 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
-## Section to get the current client configuration
-# This is used to configure the telemetry tag
-data "azurerm_client_config" "current" {}
-
 ## Section to get naming module for resource names
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = ">= 0.3.0"
+  version = "0.4.2"
 }
 
 ## Section to create resource group
@@ -130,7 +126,6 @@ The following resources are used by this module:
 - [azurerm_log_analytics_workspace.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -201,13 +196,13 @@ Version:
 
 Source: Azure/naming/azurerm
 
-Version: >= 0.3.0
+Version: 0.4.2
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
 Source: Azure/regions/azurerm
 
-Version: >= 0.3.0
+Version: 0.8.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

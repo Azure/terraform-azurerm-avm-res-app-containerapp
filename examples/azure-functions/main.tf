@@ -21,7 +21,7 @@ provider "azurerm" {
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/regions/azurerm"
-  version = ">= 0.3.0"
+  version = "0.8.2"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -30,14 +30,10 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
-## Section to get the current client configuration
-# This is used to configure the telemetry tag
-data "azurerm_client_config" "current" {}
-
 ## Section to get naming module for resource names
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = ">= 0.3.0"
+  version = "0.4.2"
 }
 
 ## Section to create resource group
