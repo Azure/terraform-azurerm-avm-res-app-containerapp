@@ -22,9 +22,6 @@ resource "modtm_telemetry" "telemetry" {
     module_version  = one(data.modtm_module_source.telemetry).module_version
     random_id       = one(random_uuid.telemetry).result
   }, { location = local.main_location })
-
-
-
 }
 locals {
   # tflint-ignore: terraform_unused_declarations
