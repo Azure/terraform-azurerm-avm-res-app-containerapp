@@ -24,6 +24,7 @@ resource "modtm_telemetry" "telemetry" {
   }, { location = local.main_location })
 
 
+
 }
 locals {
   # tflint-ignore: terraform_unused_declarations
@@ -38,6 +39,7 @@ locals {
   ]
 
 
+
 }
 
 locals {
@@ -50,6 +52,7 @@ locals {
     avm_module_source  = one(data.modtm_module_source.telemetry).module_source
     avm_module_version = one(data.modtm_module_source.telemetry).module_version
   })
+
 
 
 }
