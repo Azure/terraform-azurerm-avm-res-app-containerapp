@@ -1,5 +1,5 @@
 {
-  "image": "mcr.microsoft.com/azterraform:avm-latest",
+  "image": "mcr.microsoft.com/azterraform:latest",
   "updateRemoteUserUID": true,
   "runArgs": [],
   "mounts": [],
