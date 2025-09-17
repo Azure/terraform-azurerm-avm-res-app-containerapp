@@ -2,7 +2,9 @@
   "image": "mcr.microsoft.com/azterraform:latest",
   "updateRemoteUserUID": true,
   "runArgs": [],
-  "mounts": [],
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
   "onCreateCommand": "terraform || true",
   "customizations": {
     "vscode": {
