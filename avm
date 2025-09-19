@@ -2,14 +2,6 @@
 
 set -e
 
-echo "DEBUG: Starting AVM script execution"
-echo "DEBUG: Script arguments: $@"
-echo "DEBUG: Environment check:"
-echo "DEBUG: - PWD: $(pwd)"
-echo "DEBUG: - USER: ${USER:-<not set>}"
-echo "DEBUG: - HOME: ${HOME:-<not set>}"
-echo "DEBUG: - Shell: $0"
-
 usage () {
   echo "Usage: avm <make target>"
 }
@@ -57,62 +49,8 @@ if [ -d "${AZURE_CONFIG_DIR}" ]; then
 fi
 
 # If the host Docker socket exists, mount it into the container so the container can talk to the host docker daemon
-echo "DEBUG: Checking Docker socket availability..."
-echo "DEBUG: Docker socket path: /var/run/docker.sock"
-if [ -e /var/run/docker.sock ]; then
-  echo "DEBUG: Docker socket file exists"
-  ls -la /var/run/docker.sock
-  if [ -S /var/run/docker.sock ]; then
-    echo "DEBUG: Docker socket is a socket file"
-  else
-    echo "DEBUG: Docker socket exists but is not a socket file"
-  fi
-  if [ -r /var/run/docker.sock ]; then
-    echo "DEBUG: Docker socket is readable"
-  else
-    echo "DEBUG: Docker socket is not readable"
-  fi
-  if [ -w /var/run/docker.sock ]; then
-    echo "DEBUG: Docker socket is writable"
-  else
-    echo "DEBUG: Docker socket is not writable"
-  fi
-else
-  echo "DEBUG: Docker socket does not exist at /var/run/docker.sock"
-fi
-
-# Test Docker daemon connectivity
-echo "DEBUG: Testing Docker daemon connectivity..."
-if command -v docker >/dev/null 2>&1; then
-  echo "DEBUG: Docker command is available"
-  if docker version >/dev/null 2>&1; then
-    echo "DEBUG: Docker daemon is accessible via docker command"
-  else
-    echo "DEBUG: Docker daemon is NOT accessible via docker command"
-    echo "DEBUG: Docker version error output:"
-    docker version 2>&1 || true
-  fi
-
-  # Test the _ping endpoint specifically
-  echo "DEBUG: Testing Docker daemon _ping endpoint..."
-  if docker system info >/dev/null 2>&1; then
-    echo "DEBUG: Docker daemon _ping endpoint is accessible"
-  else
-    echo "DEBUG: Docker daemon _ping endpoint is NOT accessible"
-    echo "DEBUG: Docker system info error output:"
-    docker system info 2>&1 || true
-  fi
-else
-  echo "DEBUG: Docker command is not available"
-fi
-
-# Set Docker socket mount based on detection
 if [ -S /var/run/docker.sock ]; then
   DOCKER_SOCK_MOUNT="-v /var/run/docker.sock:/var/run/docker.sock"
-  echo "DEBUG: Setting DOCKER_SOCK_MOUNT=$DOCKER_SOCK_MOUNT"
-else
-  DOCKER_SOCK_MOUNT=""
-  echo "DEBUG: DOCKER_SOCK_MOUNT not set - socket test failed"
 fi
 
 # If we are in GitHub Copilot Coding Agent, we need to mount the SSL certificates from the host
@@ -151,23 +89,7 @@ fi
 
 # Check if we are running in a container
 # If we are then just run make directly
-echo "DEBUG: Checking AVM_IN_CONTAINER environment variable..."
-echo "DEBUG: AVM_IN_CONTAINER value: '${AVM_IN_CONTAINER:-<not set>}'"
-echo "DEBUG: Current environment context:"
-echo "DEBUG: - GITHUB_RUN_ID: '${GITHUB_RUN_ID:-<not set>}'"
-echo "DEBUG: - CI: '${CI:-<not set>}'"
-echo "DEBUG: - CONTAINER_RUNTIME: '$CONTAINER_RUNTIME'"
-echo "DEBUG: - CONTAINER_IMAGE: '$CONTAINER_IMAGE'"
-
 if [ -z "${AVM_IN_CONTAINER}" ]; then
-  echo "DEBUG: Running in container mode - will execute docker run"
-  echo "DEBUG: Container run parameters:"
-  echo "DEBUG: - DOCKER_INTERACTIVE: '${DOCKER_INTERACTIVE:-<not set>}'"
-  echo "DEBUG: - AZURE_CONFIG_MOUNT: '${AZURE_CONFIG_MOUNT:-<not set>}'"
-  echo "DEBUG: - DOCKER_SOCK_MOUNT: '${DOCKER_SOCK_MOUNT:-<not set>}'"
-  echo "DEBUG: - SSL_CERT_MOUNTS: '${SSL_CERT_MOUNTS:-<not set>}'"
-  echo "DEBUG: Final docker run command will include docker socket mount: '${DOCKER_SOCK_MOUNT:-<NONE>}'"
-
   ${CONTAINER_RUNTIME} run \
     --pull "${CONTAINER_PULL_POLICY}" \
     --user "$(id -u):$(id -g)" \
@@ -198,27 +120,5 @@ if [ -z "${AVM_IN_CONTAINER}" ]; then
     AVM_PORCH_REF="${AVM_PORCH_REF}" \
     "$1"
 else
-  echo "DEBUG: Running in direct mode - will execute make directly (AVM_IN_CONTAINER is set)"
-  echo "DEBUG: Direct execution context:"
-  echo "DEBUG: - Current user: $(id)"
-  echo "DEBUG: - Current working directory: $(pwd)"
-  echo "DEBUG: - Available Docker access:"
-  if [ -e /var/run/docker.sock ]; then
-    echo "DEBUG:   - Docker socket exists at /var/run/docker.sock"
-    ls -la /var/run/docker.sock
-  else
-    echo "DEBUG:   - Docker socket does not exist at /var/run/docker.sock"
-  fi
-  if command -v docker >/dev/null 2>&1; then
-    echo "DEBUG:   - Docker command available"
-    if docker version >/dev/null 2>&1; then
-      echo "DEBUG:   - Docker daemon accessible"
-    else
-      echo "DEBUG:   - Docker daemon NOT accessible"
-    fi
-  else
-    echo "DEBUG:   - Docker command not available"
-  fi
-
   make TUI="${TUI}" AVM_MAKEFILE_REF="${AVM_MAKEFILE_REF}" ${PORCH_BASE_URL_MAKE_ADD} AVM_PORCH_REF="${AVM_PORCH_REF}" "$1"
 fi
