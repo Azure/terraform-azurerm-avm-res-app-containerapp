@@ -837,6 +837,14 @@ object({
 
 Default: `null`
 
+### <a name="input_kind"></a> [kind](#input\_kind)
+
+Description: Metadata used to render different experiences for resources of the same type; e.g. WorkflowApp is a kind of Microsoft.App/ContainerApps type. If supported, the resource provider must validate and persist this value.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_location"></a> [location](#input\_location)
 
 Description: Azure region where the resource should be deployed. If null, the location will be inferred from the resource group location. This variable would be required in v1.0.0.

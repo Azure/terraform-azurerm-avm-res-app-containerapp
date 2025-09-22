@@ -14,8 +14,9 @@ resource "azapi_resource" "container_app" {
   location  = local.main_location
   name      = var.name
   parent_id = local.resource_group_id
-  type      = "Microsoft.App/containerApps@2025-01-01"
+  type      = "Microsoft.App/containerApps@2025-02-02-preview"
   body = {
+    kind = var.kind
     properties = {
       configuration = {
         activeRevisionsMode = var.revision_mode

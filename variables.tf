@@ -897,6 +897,12 @@ DESCRIPTION
   }
 }
 
+variable "kind" {
+  type        = string
+  default     = null
+  description = "Metadata used to render different experiences for resources of the same type; e.g. WorkflowApp is a kind of Microsoft.App/ContainerApps type. If supported, the resource provider must validate and persist this value."
+}
+
 variable "location" {
   type = string
   #TODO:Remove default value in v1.0.0
