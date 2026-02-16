@@ -172,7 +172,9 @@ resource "azapi_resource" "container_app" {
             ] : null
           }
         ] : null
-        revisionSuffix = var.template.revision_suffix
+        # revisionSuffix intentionally omitted — Azure auto-generates a unique
+        # suffix per revision. Sending a static value causes "revision with
+        # suffix already exists" errors on subsequent applies. See #115.
         scale = { for k, v in {
           minReplicas = var.template.min_replicas
           maxReplicas = var.template.max_replicas
@@ -250,7 +252,6 @@ resource "azapi_resource" "container_app" {
 
   lifecycle {
     ignore_changes = [
-      body.properties.template.revisionSuffix,
       body.properties.managedEnvironmentId,
       schema_validation_enabled,
       response_export_values,

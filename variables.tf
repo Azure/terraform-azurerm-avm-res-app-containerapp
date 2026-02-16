@@ -191,7 +191,7 @@ variable "template" {
  - `max_replicas` - (Optional) The maximum number of replicas for this container.
  - `min_replicas` - (Optional) The minimum number of replicas for this container.
  - `polling_interval` - (Optional) The interval in seconds at which the scaling rules are evaluated. Defaults to `30`.
- - `revision_suffix` - (Optional) The suffix for the revision. This value must be unique for the lifetime of the Resource. If omitted the service will use a hash function to create one.
+ - `revision_suffix` - (Optional - Deprecated) This field is no longer sent to Azure. Azure automatically generates a unique revision suffix using a hash function. Static values caused 'revision with suffix already exists' errors on subsequent applies (see [#115](https://github.com/Azure/terraform-azurerm-avm-res-app-containerapp/issues/115)). This variable is retained for backward compatibility but has no effect.
 
  ---
  `azure_queue_scale_rule` block supports the following:
