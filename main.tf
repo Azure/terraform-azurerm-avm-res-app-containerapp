@@ -257,3 +257,44 @@ resource "azapi_resource" "container_app" {
     ]
   }
 }
+
+# Read existing container app state to detect revision suffix changes
+data "azapi_resource" "existing" {
+  type                   = azapi_resource.container_app.type
+  name                   = var.name
+  parent_id              = local.resource_group_id
+  response_export_values = ["properties.template.revisionSuffix"]
+  ignore_not_found       = true
+}
+
+# Track revision suffix changes to trigger azapi_update_resource replacement
+resource "terraform_data" "revision_suffix" {
+  count = local.revision_suffix_to_send != null ? 1 : 0
+
+  input = local.revision_suffix_to_send
+}
+
+# Send revision suffix update only when user explicitly changes the suffix value.
+# This avoids the "revision with suffix already exists" error caused by re-sending
+# an unchanged suffix in the main resource PUT body.
+resource "azapi_update_resource" "revision_suffix" {
+  count = local.revision_suffix_to_send != null ? 1 : 0
+
+  type        = azapi_resource.container_app.type
+  resource_id = azapi_resource.container_app.id
+
+  body = {
+    properties = {
+      template = {
+        revisionSuffix = local.revision_suffix_to_send
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes       = all
+    replace_triggered_by = [terraform_data.revision_suffix[0]]
+  }
+
+  depends_on = [azapi_resource.container_app]
+}

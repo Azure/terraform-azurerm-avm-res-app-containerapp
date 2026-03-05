@@ -124,6 +124,23 @@ locals {
   }
   main_location     = coalesce(var.location, data.azapi_resource.rg.location)
   resource_group_id = coalesce(var.resource_group_id, data.azapi_resource.rg.id)
+
+  # HasChange guard for revision suffix:
+  # - user didn't set suffix (null) → null (omit from update)
+  # - resource doesn't exist yet (Create) → null (handled by main resource)
+  # - resource exists and suffix changed → new value (send update)
+  # - resource exists and suffix unchanged → null (skip update)
+  existing_revision_suffix = (
+    data.azapi_resource.existing.exists
+    ? try(data.azapi_resource.existing.output.properties.template.revisionSuffix, null)
+    : null
+  )
+  revision_suffix_to_send = (
+    var.template.revision_suffix == null ? null :
+    !data.azapi_resource.existing.exists ? null :
+    var.template.revision_suffix != local.existing_revision_suffix ? var.template.revision_suffix :
+    null
+  )
   scale_rules = concat(
     var.template.azure_queue_scale_rules != null ? [
       for rule in var.template.azure_queue_scale_rules : {
