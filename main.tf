@@ -288,15 +288,15 @@ locals {
   )
 }
 
-# Track revision suffix changes to trigger azapi_update_resource replacement
-resource "terraform_data" "revision_suffix" {
+# Track revision suffix changes to trigger post-creation update replacement
+resource "terraform_data" "update_keeper" {
   input = var.template.revision_suffix
 }
 
 # Send revision suffix update only when user explicitly changes the suffix value.
 # This avoids the "revision with suffix already exists" error caused by re-sending
 # an unchanged suffix in the main resource PUT body.
-resource "azapi_update_resource" "revision_suffix" {
+resource "azapi_update_resource" "post_creation_update" {
   resource_id = azapi_resource.container_app.id
   type        = azapi_resource.container_app.type
   body = {
@@ -313,6 +313,6 @@ resource "azapi_update_resource" "revision_suffix" {
 
   lifecycle {
     ignore_changes       = all
-    replace_triggered_by = [terraform_data.revision_suffix]
+    replace_triggered_by = [terraform_data.update_keeper]
   }
 }
