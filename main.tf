@@ -258,31 +258,47 @@ resource "azapi_resource" "container_app" {
   }
 }
 
-# Read existing container app state to detect revision suffix changes
+# Read existing container app state to detect revision suffix changes.
+# Uses static type and known inputs (no dependency on azapi_resource.container_app)
+# so that `exists` is known at plan time even on first Create.
 data "azapi_resource" "existing" {
-  type                   = azapi_resource.container_app.type
   name                   = var.name
-  parent_id              = local.resource_group_id
-  response_export_values = ["properties.template.revisionSuffix"]
+  parent_id              = data.azapi_resource.rg.id
+  type                   = "Microsoft.App/containerApps@2025-07-01"
   ignore_not_found       = true
+  response_export_values = ["*"]
+}
+
+locals {
+  # HasChange guard for revision suffix:
+  # - user didn't set suffix (null) → null (omit from update)
+  # - resource doesn't exist yet (Create) → null (handled by main resource)
+  # - resource exists and suffix changed → new value (send update)
+  # - resource exists and suffix unchanged → null (skip update)
+  existing_revision_suffix = (
+    data.azapi_resource.existing.exists
+    ? try(data.azapi_resource.existing.output.properties.template.revisionSuffix, null)
+    : null
+  )
+  revision_suffix_to_send = (
+    var.template.revision_suffix == null ? null :
+    !data.azapi_resource.existing.exists ? null :
+    var.template.revision_suffix != local.existing_revision_suffix ? var.template.revision_suffix :
+    null
+  )
 }
 
 # Track revision suffix changes to trigger azapi_update_resource replacement
 resource "terraform_data" "revision_suffix" {
-  count = local.revision_suffix_to_send != null ? 1 : 0
-
-  input = local.revision_suffix_to_send
+  input = var.template.revision_suffix
 }
 
 # Send revision suffix update only when user explicitly changes the suffix value.
 # This avoids the "revision with suffix already exists" error caused by re-sending
 # an unchanged suffix in the main resource PUT body.
 resource "azapi_update_resource" "revision_suffix" {
-  count = local.revision_suffix_to_send != null ? 1 : 0
-
-  type        = azapi_resource.container_app.type
   resource_id = azapi_resource.container_app.id
-
+  type        = azapi_resource.container_app.type
   body = {
     properties = {
       template = {
@@ -290,11 +306,13 @@ resource "azapi_update_resource" "revision_suffix" {
       }
     }
   }
+  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+
+  depends_on = [azapi_resource.container_app]
 
   lifecycle {
     ignore_changes       = all
-    replace_triggered_by = [terraform_data.revision_suffix[0]]
+    replace_triggered_by = [terraform_data.revision_suffix]
   }
-
-  depends_on = [azapi_resource.container_app]
 }
