@@ -61,8 +61,9 @@ module "app" {
       percentage      = 100
     }]
   }
-  location      = azurerm_resource_group.test.location
-  revision_mode = "Single"
+  location          = azurerm_resource_group.test.location
+  resource_group_id = azurerm_resource_group.test.id
+  revision_mode     = "Single"
   secrets = {
     facebook_secret = {
       name  = "facebook-secret"

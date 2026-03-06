@@ -44,7 +44,9 @@ module "container_app" {
       percentage      = 100
     }]
   }
-  revision_mode = "Multiple"
+  location          = azurerm_resource_group.test.location
+  resource_group_id = azurerm_resource_group.test.id
+  revision_mode     = "Multiple"
 
   depends_on = [
     azurerm_resource_group.test,

@@ -85,7 +85,9 @@ module "counting" {
       percentage      = 100
     }]
   }
-  revision_mode = "Single"
+  location          = azurerm_resource_group.test.location
+  resource_group_id = azurerm_resource_group.test.id
+  revision_mode     = "Single"
   secrets = {
     facebook_secret = {
       name  = "facebook-secret"
@@ -156,10 +158,12 @@ module "dashboard" {
       percentage      = 100
     }]
   }
+  location = azurerm_resource_group.test.location
   managed_identities = {
     system_assigned = true
   }
-  revision_mode = "Single"
+  resource_group_id = azurerm_resource_group.test.id
+  revision_mode     = "Single"
 
   depends_on = [
     azurerm_resource_group.test,

@@ -118,92 +118,8 @@ resource "azapi_resource" "container_app" {
       }
       environmentId        = var.container_app_environment_resource_id
       managedEnvironmentId = var.container_app_environment_resource_id
-      template = {
-        containers = [
-          for cont in var.template.containers : { for k, v in {
-            args    = cont.args
-            command = cont.command
-            env = cont.env != null ? [
-              for e in cont.env : { for k, v in {
-                name      = e.name
-                secretRef = e.secret_name
-                value     = e.value
-              } : k => v if v != null }
-            ] : null
-            image  = cont.image
-            name   = cont.name
-            probes = length(local.container_probes[cont.name]) > 0 ? local.container_probes[cont.name] : null
-            resources = {
-              cpu    = cont.cpu
-              memory = cont.memory
-            }
-            volumeMounts = cont.volume_mounts != null ? [
-              for vm in cont.volume_mounts : {
-                mountPath  = vm.path
-                subPath    = vm.sub_path
-                volumeName = vm.name
-              }
-            ] : null
-          } : k => v if v != null }
-        ]
-        initContainers = var.template.init_containers != null ? [
-          for init_cont in var.template.init_containers : {
-            args    = init_cont.args
-            command = init_cont.command
-            env = init_cont.env != null ? [
-              for e in init_cont.env : { for k, v in {
-                name      = e.name
-                secretRef = e.secret_name
-                value     = e.value
-              } : k => v if v != null }
-            ] : null
-            image = init_cont.image
-            name  = init_cont.name
-            resources = { for k, v in {
-              cpu    = init_cont.cpu
-              memory = init_cont.memory
-            } : k => v if v != null }
-            volumeMounts = init_cont.volume_mounts != null ? [
-              for vm in init_cont.volume_mounts : { for k, v in {
-                mountPath  = vm.path
-                subPath    = vm.sub_path
-                volumeName = vm.name
-              } : k => v if v != null }
-            ] : null
-          }
-        ] : null
-        revisionSuffix = var.template.revision_suffix
-        scale = { for k, v in {
-          minReplicas = var.template.min_replicas
-          maxReplicas = var.template.max_replicas
-          # Add missing scale properties
-          cooldownPeriod  = var.template.cooldown_period
-          pollingInterval = var.template.polling_interval
-          rules           = length(local.scale_rules) > 0 ? local.scale_rules : null
-        } : k => v if v != null }
-        serviceBinds = var.template.service_binds != null ? [
-          for sb in var.template.service_binds : { for k, v in {
-            name      = sb.name
-            serviceId = sb.service_id
-          } : k => v if v != null }
-        ] : null
-        terminationGracePeriodSeconds = var.template.termination_grace_period_seconds
-        volumes = var.template.volumes != null ? [
-          for vol in var.template.volumes : {
-            name         = vol.name
-            storageType  = vol.storage_type
-            storageName  = vol.storage_name
-            mountOptions = vol.mount_options
-            secrets = vol.secrets != null ? [
-              for secret in vol.secrets : {
-                path      = secret.path
-                secretRef = secret.secret_name
-              }
-            ] : null
-          }
-        ] : []
-      }
-      workloadProfileName = var.workload_profile_name
+      template             = local.template_body
+      workloadProfileName  = var.workload_profile_name
     }
   }
   create_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
@@ -250,7 +166,7 @@ resource "azapi_resource" "container_app" {
 
   lifecycle {
     ignore_changes = [
-      body.properties.template.revisionSuffix,
+      body.properties.template,
       body.properties.managedEnvironmentId,
       schema_validation_enabled,
       response_export_values,
@@ -263,7 +179,7 @@ resource "azapi_resource" "container_app" {
 # so that `exists` is known at plan time even on first Create.
 data "azapi_resource" "existing" {
   name                   = var.name
-  parent_id              = data.azapi_resource.rg.id
+  parent_id              = local.resource_group_id
   type                   = "Microsoft.App/containerApps@2025-07-01"
   ignore_not_found       = true
   response_export_values = ["*"]
@@ -271,10 +187,6 @@ data "azapi_resource" "existing" {
 
 locals {
   # HasChange guard for revision suffix:
-  # - user didn't set suffix (null) → null (omit from update)
-  # - resource doesn't exist yet (Create) → null (handled by main resource)
-  # - resource exists and suffix changed → new value (send update)
-  # - resource exists and suffix unchanged → null (skip update)
   existing_revision_suffix = (
     data.azapi_resource.existing.exists
     ? try(data.azapi_resource.existing.output.properties.template.revisionSuffix, null)
@@ -286,28 +198,115 @@ locals {
     var.template.revision_suffix != local.existing_revision_suffix ? var.template.revision_suffix :
     null
   )
+  # Template body expression shared by main resource and post-creation update
+  template_body = {
+    containers = [
+      for cont in var.template.containers : { for k, v in {
+        args    = cont.args
+        command = cont.command
+        env = cont.env != null ? [
+          for e in cont.env : { for k, v in {
+            name      = e.name
+            secretRef = e.secret_name
+            value     = e.value
+          } : k => v if v != null }
+        ] : null
+        image  = cont.image
+        name   = cont.name
+        probes = length(local.container_probes[cont.name]) > 0 ? local.container_probes[cont.name] : null
+        resources = {
+          cpu    = cont.cpu
+          memory = cont.memory
+        }
+        volumeMounts = cont.volume_mounts != null ? [
+          for vm in cont.volume_mounts : {
+            mountPath  = vm.path
+            subPath    = vm.sub_path
+            volumeName = vm.name
+          }
+        ] : null
+      } : k => v if v != null }
+    ]
+    initContainers = var.template.init_containers != null ? [
+      for init_cont in var.template.init_containers : {
+        args    = init_cont.args
+        command = init_cont.command
+        env = init_cont.env != null ? [
+          for e in init_cont.env : { for k, v in {
+            name      = e.name
+            secretRef = e.secret_name
+            value     = e.value
+          } : k => v if v != null }
+        ] : null
+        image = init_cont.image
+        name  = init_cont.name
+        resources = { for k, v in {
+          cpu    = init_cont.cpu
+          memory = init_cont.memory
+        } : k => v if v != null }
+        volumeMounts = init_cont.volume_mounts != null ? [
+          for vm in init_cont.volume_mounts : { for k, v in {
+            mountPath  = vm.path
+            subPath    = vm.sub_path
+            volumeName = vm.name
+          } : k => v if v != null }
+        ] : null
+      }
+    ] : null
+    revisionSuffix = var.template.revision_suffix
+    scale = { for k, v in {
+      minReplicas     = var.template.min_replicas
+      maxReplicas     = var.template.max_replicas
+      cooldownPeriod  = var.template.cooldown_period
+      pollingInterval = var.template.polling_interval
+      rules           = length(local.scale_rules) > 0 ? local.scale_rules : null
+    } : k => v if v != null }
+    serviceBinds = var.template.service_binds != null ? [
+      for sb in var.template.service_binds : { for k, v in {
+        name      = sb.name
+        serviceId = sb.service_id
+      } : k => v if v != null }
+    ] : null
+    terminationGracePeriodSeconds = var.template.termination_grace_period_seconds
+    volumes = var.template.volumes != null ? [
+      for vol in var.template.volumes : {
+        name         = vol.name
+        storageType  = vol.storage_type
+        storageName  = vol.storage_name
+        mountOptions = vol.mount_options
+        secrets = vol.secrets != null ? [
+          for secret in vol.secrets : {
+            path      = secret.path
+            secretRef = secret.secret_name
+          }
+        ] : null
+      }
+    ] : []
+  }
+  # Template body for post-creation PATCH update (uses revision_suffix_to_send instead of raw var)
+  template_body_for_update = merge(local.template_body, {
+    revisionSuffix = local.revision_suffix_to_send
+  })
 }
 
-# Track revision suffix changes to trigger post-creation update replacement
+# Track template changes to trigger post-creation update
 resource "terraform_data" "update_keeper" {
-  input = var.template.revision_suffix
+  input = var.template
 }
 
-# Send revision suffix update only when user explicitly changes the suffix value.
-# This avoids the "revision with suffix already exists" error caused by re-sending
-# an unchanged suffix in the main resource PUT body.
-resource "azapi_update_resource" "post_creation_update" {
+# Send template updates via PATCH only when template properties change.
+# This avoids the "revision with suffix already exists" error and the
+# secrets validation error caused by PUT on the main resource.
+# The reason using azapi_resource_action instead of azapi_update_resource is azapi_update_resource use PUT which will cause the secrets validation error, while azapi_resource_action with method PATCH can update the template without affecting the secrets.
+resource "azapi_resource_action" "post_creation_update" {
+  method      = "PATCH"
   resource_id = azapi_resource.container_app.id
   type        = azapi_resource.container_app.type
   body = {
     properties = {
-      template = {
-        revisionSuffix = local.revision_suffix_to_send
-      }
+      template = local.template_body_for_update
     }
   }
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   depends_on = [azapi_resource.container_app]
 

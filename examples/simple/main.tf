@@ -42,5 +42,7 @@ module "container_app" {
       percentage      = 100
     }]
   }
-  revision_mode = "Single"
+  location          = azurerm_resource_group.this.location
+  resource_group_id = azurerm_resource_group.this.id
+  revision_mode     = "Single"
 }

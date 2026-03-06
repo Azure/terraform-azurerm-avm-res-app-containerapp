@@ -175,10 +175,12 @@ module "node_app" {
       percentage      = 100
     }]
   }
+  location = azurerm_resource_group.this.location
   managed_identities = {
     user_assigned_resource_ids = [azurerm_user_assigned_identity.nodeapp.id]
   }
-  revision_mode = "Single"
+  resource_group_id = azurerm_resource_group.this.id
+  revision_mode     = "Single"
 
   depends_on = [
     azapi_resource.dapr_statestore

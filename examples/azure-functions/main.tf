@@ -91,5 +91,7 @@ module "container_app" {
     }]
   }
   # Enable Azure Functions hosting model
-  kind = "functionapp"
+  kind              = "functionapp"
+  location          = azurerm_resource_group.this.location
+  resource_group_id = azurerm_resource_group.this.id
 }

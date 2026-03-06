@@ -49,6 +49,22 @@ resource "azurerm_subnet" "subnet" {
   service_endpoints                             = ["Microsoft.ContainerRegistry"]
 }
 
+resource "azurerm_subnet" "container_app" {
+  address_prefixes     = ["10.0.2.0/23"]
+  name                 = "container-app-subnet"
+  resource_group_name  = azurerm_resource_group.test.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+
+  delegation {
+    name = "Microsoft.App.environments"
+
+    service_delegation {
+      name    = "Microsoft.App/environments"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+    }
+  }
+}
+
 resource "azurerm_private_endpoint" "pep" {
   location            = azurerm_resource_group.test.location
   name                = "mype"
@@ -196,7 +212,14 @@ resource "azurerm_container_app_environment" "example" {
   location                 = azurerm_resource_group.test.location
   name                     = "test-environment"
   resource_group_name      = azurerm_resource_group.test.name
-  infrastructure_subnet_id = azurerm_subnet.subnet.id
+  infrastructure_subnet_id = azurerm_subnet.container_app.id
+
+  lifecycle {
+    ignore_changes = [
+      infrastructure_resource_group_name,
+      workload_profile
+    ]
+  }
 }
 
 module "container_apps" {
@@ -227,6 +250,7 @@ module "container_apps" {
       }
     ]
   }
+  location = azurerm_resource_group.test.location
   registries = [
     {
       server               = azurerm_container_registry.acr.login_server
@@ -234,13 +258,15 @@ module "container_apps" {
       password_secret_name = "secname"
     }
   ]
-  revision_mode = "Single"
+  resource_group_id = azurerm_resource_group.test.id
+  revision_mode     = "Single"
   secrets = {
     nginx = {
       name  = "secname"
       value = azurerm_container_registry_token_password.pulltokenpassword.password1[0].value
     }
   }
+  workload_profile_name = "Consumption"
 
   depends_on = [docker_registry_image.remote]
 }
@@ -275,6 +301,7 @@ The following resources are used by this module:
 - [azurerm_private_dns_zone_virtual_network_link.vnetlink_private](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone_virtual_network_link) (resource)
 - [azurerm_private_endpoint.pep](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_resource_group.test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_subnet.container_app](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [docker_image.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/image) (resource)
