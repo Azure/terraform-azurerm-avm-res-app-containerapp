@@ -307,8 +307,7 @@ resource "azapi_resource_action" "post_creation_update" {
       template = local.template_body_for_update
     }
   }
-
-  retry {
+  retry = {
     error_message_regex = ["because there is an active provisioning operation in progress"]
     interval_seconds    = 10
   }
