@@ -76,6 +76,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.5)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.0.0)
@@ -88,7 +90,7 @@ The following resources are used by this module:
 - [azurerm_resource_group.test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
-- [azapi_resource.container_app](https://registry.terraform.io/providers/hashicorp/azapi/latest/docs/data-sources/resource) (data source)
+- [azapi_resource.container_app](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -125,11 +127,7 @@ Default: `"test-v1"`
 
 ## Outputs
 
-The following outputs are exported:
-
-### <a name="output_container_app_name"></a> [container\_app\_name](#output\_container\_app\_name)
-
-Description: n/a
+No outputs.
 
 ## Modules
 
