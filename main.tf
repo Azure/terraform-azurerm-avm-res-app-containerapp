@@ -308,6 +308,11 @@ resource "azapi_resource_action" "post_creation_update" {
     }
   }
 
+  retry {
+    error_message_regex = ["because there is an active provisioning operation in progress"]
+    interval_seconds    = 10
+  }
+
   depends_on = [azapi_resource.container_app]
 
   lifecycle {
