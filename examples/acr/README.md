@@ -208,11 +208,22 @@ resource "docker_tag" "nginx" {
   target_image = "${azurerm_container_registry.acr.login_server}/${docker_image.nginx.name}"
 }
 
+data "azurerm_client_config" "current" {}
+
+resource "azapi_resource_action" "register_microsoft_app" {
+  action      = "/providers/Microsoft.App/register"
+  method      = "POST"
+  resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  type        = "Microsoft.Resources/subscriptions@2021-04-01"
+}
+
 resource "azurerm_container_app_environment" "example" {
   location                 = azurerm_resource_group.test.location
   name                     = "test-environment"
   resource_group_name      = azurerm_resource_group.test.name
   infrastructure_subnet_id = azurerm_subnet.container_app.id
+
+  depends_on = [azapi_resource_action.register_microsoft_app]
 
   lifecycle {
     ignore_changes = [
@@ -279,6 +290,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.5)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
 
 - <a name="requirement_docker"></a> [docker](#requirement\_docker) (3.6.2)
@@ -289,6 +302,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource_action.register_microsoft_app](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [azurerm_container_app_environment.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_environment) (resource)
 - [azurerm_container_registry.acr](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_registry) (resource)
 - [azurerm_container_registry_token.pulltoken](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_registry_token) (resource)
@@ -310,6 +324,7 @@ The following resources are used by this module:
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.env_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
+- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 - [azurerm_container_registry_scope_map.pull_repos](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/container_registry_scope_map) (data source)
 - [azurerm_container_registry_scope_map.push_repos](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/container_registry_scope_map) (data source)
 

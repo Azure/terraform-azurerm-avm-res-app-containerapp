@@ -37,6 +37,15 @@ resource "azurerm_application_insights" "this" {
   workspace_id = azurerm_log_analytics_workspace.this.id
 }
 
+data "azurerm_client_config" "current" {}
+
+resource "azapi_resource_action" "register_microsoft_app" {
+  action      = "/providers/Microsoft.App/register"
+  method      = "POST"
+  resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  type        = "Microsoft.Resources/subscriptions@2021-04-01"
+}
+
 resource "azapi_resource" "managed_environment" {
   location  = azurerm_resource_group.this.location
   name      = module.naming.container_app_environment.name_unique
@@ -57,7 +66,8 @@ resource "azapi_resource" "managed_environment" {
 
   depends_on = [
     azurerm_log_analytics_workspace.this,
-    azurerm_application_insights.this
+    azurerm_application_insights.this,
+    azapi_resource_action.register_microsoft_app
   ]
 }
 

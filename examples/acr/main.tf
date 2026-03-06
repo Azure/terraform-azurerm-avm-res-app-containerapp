@@ -201,11 +201,22 @@ resource "docker_tag" "nginx" {
   target_image = "${azurerm_container_registry.acr.login_server}/${docker_image.nginx.name}"
 }
 
+data "azurerm_client_config" "current" {}
+
+resource "azapi_resource_action" "register_microsoft_app" {
+  action      = "/providers/Microsoft.App/register"
+  method      = "POST"
+  resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  type        = "Microsoft.Resources/subscriptions@2021-04-01"
+}
+
 resource "azurerm_container_app_environment" "example" {
   location                 = azurerm_resource_group.test.location
   name                     = "test-environment"
   resource_group_name      = azurerm_resource_group.test.name
   infrastructure_subnet_id = azurerm_subnet.container_app.id
+
+  depends_on = [azapi_resource_action.register_microsoft_app]
 
   lifecycle {
     ignore_changes = [
