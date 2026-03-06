@@ -57,16 +57,6 @@ module "container_app" {
     azurerm_resource_group.test,
   ]
 }
-
-# Query the actual resource state from Azure after module applies
-data "azapi_resource" "container_app" {
-  name                   = module.container_app.name
-  parent_id              = azurerm_resource_group.test.id
-  type                   = "Microsoft.App/containerApps@2024-03-01"
-  response_export_values = ["properties.template.revisionSuffix", "properties.latestRevisionName", "properties.latestReadyRevisionName"]
-
-  depends_on = [module.container_app]
-}
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -90,7 +80,6 @@ The following resources are used by this module:
 - [azurerm_resource_group.test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
-- [azapi_resource.container_app](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

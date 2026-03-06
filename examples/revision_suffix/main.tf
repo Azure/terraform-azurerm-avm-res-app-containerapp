@@ -50,13 +50,3 @@ module "container_app" {
     azurerm_resource_group.test,
   ]
 }
-
-# Query the actual resource state from Azure after module applies
-data "azapi_resource" "container_app" {
-  name                   = module.container_app.name
-  parent_id              = azurerm_resource_group.test.id
-  type                   = "Microsoft.App/containerApps@2024-03-01"
-  response_export_values = ["properties.template.revisionSuffix", "properties.latestRevisionName", "properties.latestReadyRevisionName"]
-
-  depends_on = [module.container_app]
-}
