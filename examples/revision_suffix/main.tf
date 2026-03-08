@@ -2,17 +2,13 @@ resource "random_id" "rg_name" {
   byte_length = 8
 }
 
-resource "random_id" "env_name" {
-  byte_length = 8
-}
-
 resource "random_id" "container_name" {
   byte_length = 4
 }
 
 resource "azurerm_resource_group" "test" {
   location = var.location
-  name     = "example-container-app-${random_id.rg_name.hex}-init-container"
+  name     = "example-revision-suffix-${random_id.rg_name.hex}"
 }
 
 data "azurerm_client_config" "current" {}
@@ -32,58 +28,28 @@ resource "azurerm_container_app_environment" "example" {
   depends_on = [azapi_resource_action.register_microsoft_app]
 }
 
-module "container_apps" {
+module "container_app" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
-  name                                  = "app-with-init-container-${random_id.container_name.hex}"
+  name                                  = "app-${random_id.container_name.hex}"
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
-    init_containers = [
-      {
-        name   = "debian"
-        image  = "debian:latest"
-        memory = "0.5Gi"
-        cpu    = 0.25
-        command = [
-          "/bin/sh",
-        ]
-        args = [
-          "-c", "echo Hello from the debian container > /shared/index.html"
-        ]
-        volume_mounts = [
-          {
-            name = "shared"
-            path = "/shared"
-          }
-        ]
-      }
-    ],
+    revision_suffix = var.revision_suffix
     containers = [
       {
-        name   = "nginx"
-        image  = "nginx:latest"
-        memory = "1Gi"
-        cpu    = 0.5
-        volume_mounts = [{
-          name = "shared"
-          path = "/usr/share/nginx/html"
-        }]
-      }
-    ],
-    volumes = [
-      {
-        name         = "shared"
-        storage_type = "EmptyDir"
-      }
+        name   = "myapp"
+        memory = "0.5Gi"
+        cpu    = 0.25
+        image  = var.container_image
+      },
     ]
   }
   enable_telemetry = false
   ingress = {
-    allow_insecure_connections = false
-    target_port                = 80
+    allow_insecure_connections = true
     external_enabled           = true
-
+    target_port                = 80
     traffic_weight = [{
       latest_revision = true
       percentage      = 100
@@ -91,5 +57,9 @@ module "container_apps" {
   }
   location          = azurerm_resource_group.test.location
   resource_group_id = azurerm_resource_group.test.id
-  revision_mode     = "Single"
+  revision_mode     = "Multiple"
+
+  depends_on = [
+    azurerm_resource_group.test,
+  ]
 }

@@ -2,6 +2,10 @@ terraform {
   required_version = ">= 1.9"
 
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.5"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116.0, < 5.0.0"
@@ -51,11 +55,22 @@ resource "azurerm_log_analytics_workspace" "this" {
 }
 
 ## Section to create container app environment
+data "azurerm_client_config" "current" {}
+
+resource "azapi_resource_action" "register_microsoft_app" {
+  action      = "/providers/Microsoft.App/register"
+  method      = "POST"
+  resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  type        = "Microsoft.Resources/subscriptions@2021-04-01"
+}
+
 resource "azurerm_container_app_environment" "this" {
   location                   = azurerm_resource_group.this.location
   name                       = module.naming.container_app_environment.name_unique
   resource_group_name        = azurerm_resource_group.this.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.this.id
+
+  depends_on = [azapi_resource_action.register_microsoft_app]
 }
 
 ## Section to call the container app module
@@ -91,5 +106,7 @@ module "container_app" {
     }]
   }
   # Enable Azure Functions hosting model
-  kind = "functionapp"
+  kind              = "functionapp"
+  location          = azurerm_resource_group.this.location
+  resource_group_id = azurerm_resource_group.this.id
 }

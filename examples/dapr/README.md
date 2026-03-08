@@ -46,6 +46,15 @@ resource "azurerm_application_insights" "this" {
   workspace_id = azurerm_log_analytics_workspace.this.id
 }
 
+data "azurerm_client_config" "current" {}
+
+resource "azapi_resource_action" "register_microsoft_app" {
+  action      = "/providers/Microsoft.App/register"
+  method      = "POST"
+  resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  type        = "Microsoft.Resources/subscriptions@2021-04-01"
+}
+
 resource "azapi_resource" "managed_environment" {
   location  = azurerm_resource_group.this.location
   name      = module.naming.container_app_environment.name_unique
@@ -66,7 +75,8 @@ resource "azapi_resource" "managed_environment" {
 
   depends_on = [
     azurerm_log_analytics_workspace.this,
-    azurerm_application_insights.this
+    azurerm_application_insights.this,
+    azapi_resource_action.register_microsoft_app
   ]
 }
 
@@ -184,10 +194,12 @@ module "node_app" {
       percentage      = 100
     }]
   }
+  location = azurerm_resource_group.this.location
   managed_identities = {
     user_assigned_resource_ids = [azurerm_user_assigned_identity.nodeapp.id]
   }
-  revision_mode = "Single"
+  resource_group_id = azurerm_resource_group.this.id
+  revision_mode     = "Single"
 
   depends_on = [
     azapi_resource.dapr_statestore
@@ -230,7 +242,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (>= 2.4.0)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.5)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
 
@@ -240,6 +252,7 @@ The following resources are used by this module:
 
 - [azapi_resource.dapr_statestore](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.managed_environment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource_action.register_microsoft_app](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [azurerm_application_insights.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_insights) (resource)
 - [azurerm_log_analytics_workspace.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
@@ -247,6 +260,7 @@ The following resources are used by this module:
 - [azurerm_storage_account.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_account) (resource)
 - [azurerm_storage_container.orders](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/storage_container) (resource)
 - [azurerm_user_assigned_identity.nodeapp](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
+- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

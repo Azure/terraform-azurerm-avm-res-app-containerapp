@@ -14,6 +14,10 @@ terraform {
   required_version = ">= 1.9"
 
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.5"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.116.0, < 5.0.0"
@@ -63,11 +67,22 @@ resource "azurerm_log_analytics_workspace" "this" {
 }
 
 ## Section to create container app environment
+data "azurerm_client_config" "current" {}
+
+resource "azapi_resource_action" "register_microsoft_app" {
+  action      = "/providers/Microsoft.App/register"
+  method      = "POST"
+  resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  type        = "Microsoft.Resources/subscriptions@2021-04-01"
+}
+
 resource "azurerm_container_app_environment" "this" {
   location                   = azurerm_resource_group.this.location
   name                       = module.naming.container_app_environment.name_unique
   resource_group_name        = azurerm_resource_group.this.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.this.id
+
+  depends_on = [azapi_resource_action.register_microsoft_app]
 }
 
 ## Section to call the container app module
@@ -103,7 +118,9 @@ module "container_app" {
     }]
   }
   # Enable Azure Functions hosting model
-  kind = "functionapp"
+  kind              = "functionapp"
+  location          = azurerm_resource_group.this.location
+  resource_group_id = azurerm_resource_group.this.id
 }
 ```
 
@@ -114,6 +131,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9)
 
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.5)
+
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.116.0, < 5.0.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
@@ -122,10 +141,12 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource_action.register_microsoft_app](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [azurerm_container_app_environment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_environment) (resource)
 - [azurerm_log_analytics_workspace.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
+- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
