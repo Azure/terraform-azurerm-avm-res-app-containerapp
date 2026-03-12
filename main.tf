@@ -124,6 +124,7 @@ resource "azapi_resource" "container_app" {
   }
   create_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_body_changes       = ["properties.workloadProfileName"]
   read_headers              = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values    = ["*"]
   schema_validation_enabled = false
