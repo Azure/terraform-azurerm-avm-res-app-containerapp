@@ -213,8 +213,15 @@ Description:  - `cooldown_period` - (Optional) The cooldown period in seconds af
  ---
  `volume` block supports the following:
  - `name` - (Required) The name of the volume.
+ - `mount_options` - (Optional) Mount options for the storage volume.
+ - `secrets` - (Optional) A list of `secrets` blocks as defined below. When `storage_type` is `Secret`, use this to selectively mount specific secrets into the volume. If omitted, all secrets defined at the app level are mounted.
  - `storage_name` - (Optional) The name of the `AzureFile` storage.
  - `storage_type` - (Optional) The type of storage volume. Possible values are `AzureFile`, `EmptyDir` and `Secret`. Defaults to `EmptyDir`.
+
+ ---
+ `secrets` block (within `volume`) supports the following:
+ - `path` - (Required) The path to project the secret to within the volume.
+ - `secret_name` - (Required) The name of the Container App secret to pull the value from.
 
 Type:
 
