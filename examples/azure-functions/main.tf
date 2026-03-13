@@ -70,6 +70,11 @@ resource "azurerm_container_app_environment" "this" {
   resource_group_name        = azurerm_resource_group.this.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.this.id
 
+  workload_profile {
+    name                  = "Consumption"
+    workload_profile_type = "Consumption"
+  }
+
   depends_on = [azapi_resource_action.register_microsoft_app]
 }
 
@@ -106,7 +111,8 @@ module "container_app" {
     }]
   }
   # Enable Azure Functions hosting model
-  kind              = "functionapp"
-  location          = azurerm_resource_group.this.location
-  resource_group_id = azurerm_resource_group.this.id
+  kind                  = "functionapp"
+  location              = azurerm_resource_group.this.location
+  resource_group_id     = azurerm_resource_group.this.id
+  workload_profile_name = "Consumption"
 }
