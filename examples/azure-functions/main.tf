@@ -73,8 +73,8 @@ resource "azurerm_container_app_environment" "this" {
   workload_profile {
     name                  = "Consumption"
     workload_profile_type = "Consumption"
-    minimum_count         = 1
     maximum_count         = 1
+    minimum_count         = 1
   }
 
   depends_on = [azapi_resource_action.register_microsoft_app]

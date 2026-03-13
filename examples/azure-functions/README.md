@@ -82,11 +82,14 @@ resource "azurerm_container_app_environment" "this" {
   resource_group_name        = azurerm_resource_group.this.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.this.id
 
-  depends_on = [azapi_resource_action.register_microsoft_app]
-
-  lifecycle {
-    ignore_changes = [workload_profile]
+  workload_profile {
+    name                  = "Consumption"
+    workload_profile_type = "Consumption"
+    maximum_count         = 1
+    minimum_count         = 1
   }
+
+  depends_on = [azapi_resource_action.register_microsoft_app]
 }
 
 ## Section to call the container app module
