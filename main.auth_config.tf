@@ -163,8 +163,9 @@ resource "azapi_resource" "auth_config" {
       }
     }
   }
-  create_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers   = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  ignore_null_property = true
+  read_headers         = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  update_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 }
