@@ -127,6 +127,7 @@ resource "azapi_resource" "container_app" {
   ignore_null_property      = true
   read_headers              = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values    = ["*"]
+  retry                     = var.retry
   schema_validation_enabled = false
   sensitive_body = local.sensitive_body_present ? {
     properties = {
