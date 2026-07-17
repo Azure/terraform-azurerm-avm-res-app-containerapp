@@ -17,10 +17,10 @@ resource "azapi_resource" "container_app" {
   type      = "Microsoft.App/containerApps@2025-02-02-preview"
   body = {
     kind = var.kind
-    properties = {
+    properties = merge({
       configuration = {
         activeRevisionsMode = var.revision_mode
-        dapr = var.dapr != null ? {
+        dapr = var.dapr != null ? { for k, v in {
           appId              = var.dapr.app_id
           appPort            = var.dapr.app_port
           appProtocol        = var.dapr.app_protocol
@@ -29,14 +29,14 @@ resource "azapi_resource" "container_app" {
           httpMaxRequestSize = var.dapr.http_max_request_size
           httpReadBufferSize = var.dapr.http_read_buffer_size
           logLevel           = var.dapr.log_level
-        } : null
+        } : k => v if v != null } : null
         identitySettings = var.identity_settings != null ? [
           for is in var.identity_settings : {
             identity  = is.identity
             lifecycle = is.lifecycle
           }
-        ] : []
-        ingress = var.ingress == null ? null : {
+        ] : null
+        ingress = var.ingress == null ? null : { for k, v in {
           allowInsecure         = var.ingress.allow_insecure_connections
           clientCertificateMode = try(title(var.ingress.client_certificate_mode), null)
           exposedPort           = var.ingress.exposed_port
@@ -97,21 +97,21 @@ resource "azapi_resource" "container_app" {
               weight         = weight.percentage
             }
           ]
-        }
+        } : k => v if v != null }
         maxInactiveRevisions = var.max_inactive_revisions
         registries = var.registries != null ? [
-          for reg in var.registries : {
+          for reg in var.registries : { for k, v in {
             identity          = reg.identity == null ? "" : reg.identity
             passwordSecretRef = reg.password_secret_name
             server            = reg.server
             username          = reg.username
-          }
+          } : k => v if v != null }
         ] : null
-        runtime = var.runtime != null ? {
+        runtime = var.runtime != null ? { for k, v in {
           java = var.runtime.java != null ? {
             enableMetrics = var.runtime.java.enable_metrics
           } : null
-        } : null
+        } : k => v if v != null } : null
         service = var.service != null ? {
           type = var.service.type
         } : null
@@ -119,12 +119,10 @@ resource "azapi_resource" "container_app" {
       environmentId        = var.container_app_environment_resource_id
       managedEnvironmentId = var.container_app_environment_resource_id
       template             = local.template_body
-      workloadProfileName  = var.workload_profile_name
-    }
+    }, var.workload_profile_name != null ? { workloadProfileName = var.workload_profile_name } : {})
   }
   create_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   delete_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  ignore_null_property      = true
   read_headers              = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values    = ["*"]
   retry                     = var.retry
