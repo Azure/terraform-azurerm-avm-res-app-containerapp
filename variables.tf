@@ -1,4 +1,4 @@
-variable "container_app_environment_resource_id" {
+successfully downloaded text file (SHA: 903e3a5e76df763ddabae5b54bf2ce255dfb198f)variable "container_app_environment_resource_id" {
   type        = string
   description = "The ID of the Container App Environment to host this Container App."
   nullable    = false
@@ -710,7 +710,7 @@ variable "dapr" {
     - `enabled` - (Optional) Enable Dapr for the application. Defaults to `false`.
     - `http_max_request_size` - (Optional) The maximum allowed HTTP request size in bytes.
     - `http_read_buffer_size` - (Optional) The size of the buffer used for reading the HTTP request body in bytes.
-    - `log_level` - (Optional) The log level for Dapr. Possible values include "debug", "info", "warn", "error", and "fatal".
+    - `log_level` - (Optional) The log level for Dapr. Possible values include "debug", "info", "warn", and "error".
   EOT
 
   validation {
@@ -819,10 +819,10 @@ variable "ingress" {
 This object defines the ingress properties for the container app:
 
 - `allow_insecure_connections` - (Optional) Should this ingress allow insecure connections? Defaults to `false`.
-- `client_certificate_mode` - (Optional) The mode for client certificate authentication. Possible values include `optional` and `required`.
+- `client_certificate_mode` - (Optional) The mode for client certificate authentication. Possible values include `accept`, `ignore`, and `require`.
 - `exposed_port` - (Optional) The exposed port on the container for the Ingress traffic. Defaults to `0`.
 - `external_enabled` - (Optional) Are connections to this Ingress from outside the Container App Environment enabled? Defaults to `false`.
-- `target_port` - (Required) The target port on the container for the Ingress traffic. Defaults to `Auto`.
+- `target_port` - (Optional) The target port on the container for the Ingress traffic. When not set, the Container App will automatically select an available port if only one is exposed.
 - `transport` - (Optional) The transport method for the Ingress. Possible values include `auto`, `http`, `http2`, and `tcp`. Defaults to `auto`.
 
 ---
@@ -855,14 +855,14 @@ This object defines the ingress properties for the container app:
 
 ---
 `ip_restrictions` block supports the following:
-- `action` - (Optional) The action to take when the IP security restriction is triggered. Possible values include `allow` and `deny`.
+- `action` - (Optional) The action to take when the IP security restriction is triggered. Possible values include `Allow` and `Deny`.
 - `description` - (Optional) A description for the IP security restriction.
 - `ip_range` - (Optional) The IP address range for the security restriction.
 - `name` - (Optional) The name for the IP security restriction.
 
 ---
 `sticky_sessions` block supports the following:
-- `affinity` - (Optional) The affinity type for sticky sessions. Possible values include `None`, `ClientIP`, and `Server`.
+- `affinity` - (Optional) The affinity type for sticky sessions. Possible values include `none` and `sticky`.
 
 DESCRIPTION
 
@@ -969,7 +969,7 @@ variable "registries" {
   description = <<-EOT
 
     - `identity` - (Optional) Resource ID for the User Assigned Managed identity to use when pulling from the Container Registry.
-    - `password_secret_name ` - (Optional) The name of the Secret Reference containing the password value for this user on the Container Registry, `username` must also be supplied.
+    - `password_secret_name` - (Optional) The name of the Secret Reference containing the password value for this user on the Container Registry, `username` must also be supplied.
     - `server` - (Optional) The hostname for the Container Registry.
     - `username` - (Optional) The username to use for this Container Registry, `password_secret_name` must also be supplied.
 
