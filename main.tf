@@ -155,6 +155,7 @@ resource "azapi_resource" "container_app" {
       identity_ids = module.avm_interfaces.managed_identities_azapi.identity_ids
     }
   }
+
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
 
@@ -314,10 +315,9 @@ resource "azapi_resource_action" "post_creation_update" {
     interval_seconds    = 10
   }
 
-  depends_on = [azapi_resource.container_app]
-
   lifecycle {
     ignore_changes       = all
     replace_triggered_by = [terraform_data.update_keeper]
   }
+  depends_on = [azapi_resource.container_app]
 }
