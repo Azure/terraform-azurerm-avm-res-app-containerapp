@@ -292,9 +292,9 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.5)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.1)
 
-- <a name="requirement_docker"></a> [docker](#requirement\_docker) (3.6.2)
+- <a name="requirement_docker"></a> [docker](#requirement\_docker) (4.5.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.0.0)
 
@@ -318,9 +318,9 @@ The following resources are used by this module:
 - [azurerm_subnet.container_app](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [docker_image.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/image) (resource)
-- [docker_registry_image.remote](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/registry_image) (resource)
-- [docker_tag.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/tag) (resource)
+- [docker_image.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/4.5.0/docs/resources/image) (resource)
+- [docker_registry_image.remote](https://registry.terraform.io/providers/kreuzwerker/docker/4.5.0/docs/resources/registry_image) (resource)
+- [docker_tag.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/4.5.0/docs/resources/tag) (resource)
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.env_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
