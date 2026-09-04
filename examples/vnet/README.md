@@ -42,14 +42,13 @@ resource "azurerm_container_app_environment" "example" {
   resource_group_name      = azurerm_resource_group.test.name
   infrastructure_subnet_id = azurerm_subnet.subnet.id
 
-  depends_on = [azapi_resource_action.register_microsoft_app]
-
   lifecycle {
     ignore_changes = [
       infrastructure_resource_group_name,
       workload_profile
     ]
   }
+  depends_on = [azapi_resource_action.register_microsoft_app]
 }
 
 resource "azurerm_virtual_network" "vnet" {
@@ -60,10 +59,10 @@ resource "azurerm_virtual_network" "vnet" {
 }
 
 resource "azurerm_subnet" "subnet" {
-  address_prefixes     = ["192.168.0.0/16"]
   name                 = "container-app-subnet"
   resource_group_name  = azurerm_resource_group.test.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["192.168.0.0/16"]
 
   delegation {
     name = "Microsoft.App.environments"
