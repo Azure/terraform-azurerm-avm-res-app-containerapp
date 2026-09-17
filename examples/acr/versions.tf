@@ -8,11 +8,11 @@ terraform {
     }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.20.0, < 5.0"
+      version = ">= 4.20.0, < 5.1"
     }
     docker = {
       source  = "kreuzwerker/docker"
-      version = "3.6.2"
+      version = "4.5.0"
     }
     random = {
       source  = "hashicorp/random"

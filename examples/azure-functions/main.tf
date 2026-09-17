@@ -8,7 +8,7 @@ terraform {
     }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.116.0, < 5.0.0"
+      version = ">= 3.116.0, < 5.0.2"
     }
     random = {
       source  = "hashicorp/random"
@@ -37,7 +37,7 @@ resource "random_integer" "region_index" {
 ## Section to get naming module for resource names
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.2"
+  version = "0.4.3"
 }
 
 ## Section to create resource group
