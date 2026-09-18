@@ -100,7 +100,7 @@ module "container_app" {
     max_replicas = var.max_replicas
   }
   # Enable telemetry for AVM compliance
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   # Ingress configuration for external access
   ingress = {
     external_enabled = true
