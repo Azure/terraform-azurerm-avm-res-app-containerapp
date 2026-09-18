@@ -109,7 +109,7 @@ module "counting" {
       },
     ]
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     allow_insecure_connections = true
     external_enabled           = true
@@ -153,7 +153,7 @@ module "dashboard" {
       },
     ]
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     allow_insecure_connections = false
     target_port                = 8080

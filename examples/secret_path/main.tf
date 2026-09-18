@@ -65,7 +65,7 @@ module "container_app" {
       }]
     }]
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     external_enabled = true
     target_port      = 80
