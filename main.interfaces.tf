@@ -9,8 +9,8 @@ module "avm_interfaces" {
     user_assigned_resource_ids = var.managed_identities.user_assigned_resource_ids
   }
   role_assignment_definition_scope     = azapi_resource.container_app.id
-  role_assignment_name_use_random_uuid = true
   role_assignments                     = var.role_assignments
+  role_assignment_name_use_random_uuid = true
 }
 
 resource "azapi_resource" "role_assignments" {
