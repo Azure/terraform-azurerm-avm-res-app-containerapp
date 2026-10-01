@@ -42,14 +42,13 @@ resource "azurerm_container_app_environment" "example" {
   resource_group_name      = azurerm_resource_group.test.name
   infrastructure_subnet_id = azurerm_subnet.subnet.id
 
-  depends_on = [azapi_resource_action.register_microsoft_app]
-
   lifecycle {
     ignore_changes = [
       infrastructure_resource_group_name,
       workload_profile
     ]
   }
+  depends_on = [azapi_resource_action.register_microsoft_app]
 }
 
 resource "azurerm_virtual_network" "vnet" {
@@ -60,10 +59,10 @@ resource "azurerm_virtual_network" "vnet" {
 }
 
 resource "azurerm_subnet" "subnet" {
-  address_prefixes     = ["192.168.0.0/16"]
   name                 = "container-app-subnet"
   resource_group_name  = azurerm_resource_group.test.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["192.168.0.0/16"]
 
   delegation {
     name = "Microsoft.App.environments"
@@ -117,7 +116,7 @@ module "counting" {
       },
     ]
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     allow_insecure_connections = true
     external_enabled           = true
@@ -161,7 +160,7 @@ module "dashboard" {
       },
     ]
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     allow_insecure_connections = false
     target_port                = 8080
@@ -222,6 +221,16 @@ No required inputs.
 ## Optional Inputs
 
 The following input variables are optional (have default values):
+
+### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
+
+Description: This variable controls whether or not telemetry is enabled for the module.  
+For more information see <https://aka.ms/avm/telemetryinfo>.  
+If it is set to false, then no telemetry will be collected.
+
+Type: `bool`
+
+Default: `true`
 
 ### <a name="input_location"></a> [location](#input\_location)
 

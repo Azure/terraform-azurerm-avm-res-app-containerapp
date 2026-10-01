@@ -44,7 +44,7 @@ module "container_app" {
     min_replicas = 1
     max_replicas = 1
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     external_enabled = true
     target_port      = 80

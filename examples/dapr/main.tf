@@ -176,7 +176,7 @@ module "node_app" {
     app_protocol = "http"
     app_port     = local.node_port
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     external_enabled = false
     target_port      = local.node_port
@@ -217,7 +217,7 @@ module "python_app" {
     enabled = true
     app_id  = "pythonapp"
   }
-  enable_telemetry  = false
+  enable_telemetry  = var.enable_telemetry
   location          = azurerm_resource_group.this.location
   resource_group_id = azurerm_resource_group.this.id
   revision_mode     = "Single"

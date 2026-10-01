@@ -121,9 +121,6 @@ resource "azapi_resource" "container_app" {
       template             = local.template_body
     }, var.workload_profile_name != null ? { workloadProfileName = var.workload_profile_name } : {})
   }
-  create_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  read_headers              = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values    = ["*"]
   retry                     = var.retry
   schema_validation_enabled = false
@@ -142,8 +139,7 @@ resource "azapi_resource" "container_app" {
         ] : null
     } }
   } : null
-  tags           = var.tags
-  update_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
+  tags = var.tags
 
   dynamic "identity" {
     for_each = module.avm_interfaces.managed_identities_azapi == null ? [] : [1]

@@ -85,7 +85,7 @@ module "counting" {
       }
     }
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     allow_insecure_connections = true
     client_certificate_mode    = "ignore"
@@ -157,7 +157,7 @@ module "dashboard" {
       },
     ]
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     allow_insecure_connections = false
     client_certificate_mode    = "ignore"

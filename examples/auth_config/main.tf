@@ -61,7 +61,7 @@ module "app" {
       }
     }
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     allow_insecure_connections = true
     external_enabled           = true

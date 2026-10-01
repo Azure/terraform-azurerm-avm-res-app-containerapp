@@ -20,6 +20,7 @@ resource "random_id" "container_name" {
 resource "docker_registry_image" "remote" {
   name          = docker_tag.nginx.target_image
   keep_remotely = true
+
   auth_config {
     address  = "https://${azurerm_container_registry.acr.login_server}"
     password = azurerm_container_registry_token_password.pushtokenpassword.password1[0].value
@@ -40,20 +41,20 @@ resource "azurerm_virtual_network" "vnet" {
 }
 
 resource "azurerm_subnet" "subnet" {
-  address_prefixes                              = ["10.0.0.0/23"]
   name                                          = "subnet1"
   resource_group_name                           = azurerm_resource_group.test.name
   virtual_network_name                          = azurerm_virtual_network.vnet.name
+  address_prefixes                              = ["10.0.0.0/23"]
   private_endpoint_network_policies             = "Disabled"
   private_link_service_network_policies_enabled = false
   service_endpoints                             = ["Microsoft.ContainerRegistry"]
 }
 
 resource "azurerm_subnet" "container_app" {
-  address_prefixes     = ["10.0.2.0/23"]
   name                 = "container-app-subnet"
   resource_group_name  = azurerm_resource_group.test.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.2.0/23"]
 
   delegation {
     name = "Microsoft.App.environments"
@@ -125,11 +126,15 @@ resource "azurerm_private_dns_a_record" "data" {
 resource "azurerm_container_registry" "acr" {
   #checkov:skip=CKV_AZURE_139: Public network access is required for the test
   #checkov:skip=CKV_AZURE_166: Quarantine would block our test so we skip it
-  location                      = azurerm_resource_group.test.location
-  name                          = "acr${random_id.container_name.hex}"
-  resource_group_name           = azurerm_resource_group.test.name
-  sku                           = "Premium"
-  admin_enabled                 = false
+  location            = azurerm_resource_group.test.location
+  name                = "acr${random_id.container_name.hex}"
+  resource_group_name = azurerm_resource_group.test.name
+  sku                 = "Premium"
+  admin_enabled       = false
+
+  network_rule_set {
+    default_action = "Allow"
+  }
   public_network_access_enabled = true
   retention_policy_in_days      = 7
   trust_policy_enabled          = true
@@ -143,9 +148,6 @@ resource "azurerm_container_registry" "acr" {
     location                = var.backup_location2
     tags                    = {}
     zone_redundancy_enabled = true
-  }
-  network_rule_set {
-    default_action = "Allow"
   }
 }
 
@@ -223,14 +225,13 @@ resource "azurerm_container_app_environment" "example" {
   resource_group_name      = azurerm_resource_group.test.name
   infrastructure_subnet_id = azurerm_subnet.container_app.id
 
-  depends_on = [azapi_resource_action.register_microsoft_app]
-
   lifecycle {
     ignore_changes = [
       infrastructure_resource_group_name,
       workload_profile
     ]
   }
+  depends_on = [azapi_resource_action.register_microsoft_app]
 }
 
 module "container_apps" {
@@ -249,7 +250,7 @@ module "container_apps" {
       }
     ]
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   ingress = {
     allow_insecure_connections = false
     external_enabled           = true
@@ -352,6 +353,16 @@ Description: n/a
 Type: `string`
 
 Default: `"westeurope"`
+
+### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
+
+Description: This variable controls whether or not telemetry is enabled for the module.  
+For more information see <https://aka.ms/avm/telemetryinfo>.  
+If it is set to false, then no telemetry will be collected.
+
+Type: `bool`
+
+Default: `true`
 
 ### <a name="input_location"></a> [location](#input\_location)
 
