@@ -739,7 +739,7 @@ variable "identity_settings" {
     identity  = string
     lifecycle = optional(string, "All")
   }))
-  default     = null
+  default     = []
   description = <<-EOT
     A list of identity settings for the Container App.
 
