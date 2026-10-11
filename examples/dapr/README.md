@@ -10,7 +10,7 @@ The above tutorial uses the template here: <https://github.com/Azure-Samples/Tut
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.4.0"
+  version = "0.4.4"
 }
 
 locals {
@@ -293,7 +293,7 @@ The following Modules are called:
 
 Source: Azure/naming/azurerm
 
-Version: 0.4.0
+Version: 0.4.4
 
 ### <a name="module_node_app"></a> [node\_app](#module\_node\_app)
 
