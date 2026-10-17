@@ -122,7 +122,7 @@ locals {
       }] : [],
     )
   }
-  main_location     = coalesce(var.location, data.azapi_resource.rg.location)
+  main_location     = var.location
   resource_group_id = coalesce(var.resource_group_id, data.azapi_resource.rg.id)
   scale_rules = concat(
     var.template.azure_queue_scale_rules != null ? [
