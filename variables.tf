@@ -4,6 +4,12 @@ variable "container_app_environment_resource_id" {
   nullable    = false
 }
 
+variable "location" {
+  type        = string
+  description = "Azure region where the Container App and telemetry deployment are deployed."
+  nullable    = false
+}
+
 variable "name" {
   type        = string
   description = "The name of the Container App."
@@ -908,13 +914,6 @@ variable "kind" {
   type        = string
   default     = null
   description = "Metadata used to render different experiences for resources of the same type; e.g. WorkflowApp is a kind of Microsoft.App/ContainerApps type. If supported, the resource provider must validate and persist this value."
-}
-
-variable "location" {
-  type = string
-  #TODO:Remove default value in v1.0.0
-  default     = null
-  description = "Azure region where the resource should be deployed. If null, the location will be inferred from the resource group location. This variable would be required in v1.0.0."
 }
 
 # required AVM interfaces

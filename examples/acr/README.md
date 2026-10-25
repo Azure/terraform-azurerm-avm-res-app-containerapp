@@ -238,6 +238,7 @@ module "container_apps" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  location                              = azurerm_resource_group.test.location
   name                                  = "nginx"
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -262,7 +263,6 @@ module "container_apps" {
       }
     ]
   }
-  location = azurerm_resource_group.test.location
   registries = [
     {
       server               = azurerm_container_registry.acr.login_server

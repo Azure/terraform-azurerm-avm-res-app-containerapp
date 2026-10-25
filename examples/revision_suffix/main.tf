@@ -32,6 +32,7 @@ module "container_app" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  location                              = azurerm_resource_group.test.location
   name                                  = "app-${random_id.container_name.hex}"
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -55,7 +56,6 @@ module "container_app" {
       percentage      = 100
     }]
   }
-  location          = azurerm_resource_group.test.location
   resource_group_id = azurerm_resource_group.test.id
   revision_mode     = "Multiple"
 

@@ -10,6 +10,10 @@ Normally consumers do not need to call this submodule directly: passing `auth_co
 
 The submodule manages exactly one auth config per invocation. Cardinality is the caller's responsibility — use `for_each` or `count` on the `module` block to deploy more than one.
 
+## Upgrade notes
+
+`location` is now required and cannot be null, even when telemetry is disabled. The parent Container App module forwards its location automatically; independent callers must supply the Azure region for the telemetry deployment.
+
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
@@ -41,7 +45,7 @@ Type: `string`
 
 ### <a name="input_location"></a> [location](#input\_location)
 
-Description: The Azure region for this module's resources or telemetry deployment.
+Description: The Azure region for the auth config telemetry deployment.
 
 Type: `string`
 
