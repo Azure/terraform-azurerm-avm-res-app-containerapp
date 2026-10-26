@@ -743,7 +743,7 @@ list(object({
   }))
 ```
 
-Default: `null`
+Default: `[]`
 
 ### <a name="input_ingress"></a> [ingress](#input\_ingress)
 
