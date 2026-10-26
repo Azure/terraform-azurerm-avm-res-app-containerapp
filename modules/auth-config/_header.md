@@ -7,3 +7,7 @@ It exists to satisfy AVM specification [TFRMNFR1](https://azure.github.io/Azure-
 Normally consumers do not need to call this submodule directly: passing `auth_configs` to the parent `Azure/avm-res-app-containerapp/azurerm` module will instantiate it under the covers. The submodule can also be consumed independently when an auth config needs to be attached to a Container App that is managed outside of this module.
 
 The submodule manages exactly one auth config per invocation. Cardinality is the caller's responsibility — use `for_each` or `count` on the `module` block to deploy more than one.
+
+## Upgrade notes
+
+`location` is now required and cannot be null, even when telemetry is disabled. The parent Container App module forwards its location automatically; independent callers must supply the Azure region for the telemetry deployment.

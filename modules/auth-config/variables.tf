@@ -9,6 +9,12 @@ variable "container_app_resource_id" {
   }
 }
 
+variable "location" {
+  type        = string
+  description = "The Azure region for the auth config telemetry deployment."
+  nullable    = false
+}
+
 variable "name" {
   type        = string
   description = "The name of the Container App AuthConfig resource. The Azure API only accepts the value `current`."
