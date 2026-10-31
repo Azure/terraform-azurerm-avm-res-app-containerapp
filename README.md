@@ -732,7 +732,7 @@ Description: A list of identity settings for the Container App.
 ---
 `identity_settings` block supports the following:
 - `identity` - (Required) The resource ID of the user-assigned managed identity.
-- `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, `Retain` and `All`. Defaults to `All`.
+- `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `Main`, `None` and `All`. Defaults to `All`.
 
 Type:
 
