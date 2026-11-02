@@ -9,12 +9,6 @@ variable "container_app_resource_id" {
   }
 }
 
-variable "location" {
-  type        = string
-  description = "The Azure region for the auth config telemetry deployment."
-  nullable    = false
-}
-
 variable "name" {
   type        = string
   description = "The name of the Container App AuthConfig resource. The Azure API only accepts the value `current`."
@@ -199,6 +193,17 @@ variable "identity_providers" {
   description = <<-EOT
 The configuration settings of each of the identity providers used to configure ContainerApp Service Authentication/Authorization. See the parent `auth_configs` variable in the root module for the full description of each supported provider.
 EOT
+}
+
+variable "location" {
+  type        = string
+  default     = null
+  description = "The Azure region for the auth config telemetry deployment."
+
+  validation {
+    condition     = !var.enable_telemetry || var.location != null
+    error_message = "The location must not be null when telemetry is enabled."
+  }
 }
 
 variable "login" {
