@@ -43,12 +43,6 @@ Description: The Azure resource ID of the Container App that this auth config wi
 
 Type: `string`
 
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: The Azure region for the auth config telemetry deployment.
-
-Type: `string`
-
 ### <a name="input_name"></a> [name](#input\_name)
 
 Description: The name of the Container App AuthConfig resource. The Azure API only accepts the value `current`.
@@ -251,6 +245,14 @@ object({
     })), {})
   })
 ```
+
+Default: `null`
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: The Azure region for the auth config telemetry deployment.
+
+Type: `string`
 
 Default: `null`
 
