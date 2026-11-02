@@ -3,13 +3,13 @@ module "auth_config" {
   for_each = var.auth_configs
 
   container_app_resource_id = azapi_resource.container_app.id
-  location                  = var.location
   name                      = each.value.name
   enable_telemetry          = var.enable_telemetry
   encryption_settings       = each.value.encryption_settings
   global_validation         = each.value.global_validation
   http_settings             = each.value.http_settings
   identity_providers        = each.value.identity_providers
+  location                  = var.location
   login                     = each.value.login
   platform                  = each.value.platform
   retry                     = var.retry
