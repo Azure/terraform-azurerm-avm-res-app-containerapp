@@ -752,15 +752,15 @@ variable "identity_settings" {
     ---
     `identity_settings` block supports the following:
     - `identity` - (Required) The resource ID of the user-assigned managed identity.
-    - `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, `Retain` and `All`. Defaults to `All`.
+    - `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `Main`, `None` and `All`. Defaults to `All`.
   EOT
 
   validation {
     condition = try(var.identity_settings == null ? true : alltrue([
       for setting in var.identity_settings :
-      setting == null ? true : contains(["Init", "None", "Retain", "All"], setting.lifecycle)
+      setting == null ? true : contains(["Init", "Main", "None", "All"], setting.lifecycle)
     ]), true)
-    error_message = "Possible values for `identity_settings.lifecycle` are `Init`, `None`, `Retain` and `All`."
+    error_message = "Possible values for `identity_settings.lifecycle` are `Init`, `Main`, `None` and `All`."
   }
 }
 
