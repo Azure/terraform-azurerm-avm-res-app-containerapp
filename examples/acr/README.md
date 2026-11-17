@@ -4,6 +4,29 @@
 
 This deploys the module with Azure Container Registry.
 
+Azure imports `docker.io/library/nginx:latest` into ACR as `nginx:latest`
+before the Container App is created. No local Docker engine or image build is
+required. The app still authenticates with the existing pull token and secret;
+the registry, networking, private endpoints, and geo-replication are unchanged.
+
+The deployment identity needs `Microsoft.ContainerRegistry/registries/importImage/action`
+on the target registry, for example through the **Container Registry Data Importer
+and Data Reader** role. Network-restricted registries must allow trusted services.
+See [ACR image import](https://learn.microsoft.com/azure/container-registry/container-registry-import-images).
+
+The import uses `Force` to overwrite an existing destination tag when the action
+runs. Unchanged applies do not reimport; changing the request, changing/replacing
+the registry, or explicitly replacing `azapi_resource_action.import_nginx` runs
+the import again. The mutable upstream `latest` tag can then resolve to a newer
+image. AzAPI waits for the import operation to complete and surfaces failures.
+Removing the action does not delete the imported image.
+
+Existing example states will plan removal of the local Docker image/tag/push
+resources and push-only token/password. Review that cleanup before applying;
+state that still references Docker may need the old provider and daemon for its
+normal cleanup. Retain the registry, pull-token/password, and Container App state.
+No automatic state removal or migration is performed by this example.
+
 ```hcl
 resource "random_id" "rg_name" {
   byte_length = 8
@@ -15,17 +38,6 @@ resource "random_id" "env_name" {
 
 resource "random_id" "container_name" {
   byte_length = 4
-}
-
-resource "docker_registry_image" "remote" {
-  name          = docker_tag.nginx.target_image
-  keep_remotely = true
-
-  auth_config {
-    address  = "https://${azurerm_container_registry.acr.login_server}"
-    password = azurerm_container_registry_token_password.pushtokenpassword.password1[0].value
-    username = azurerm_container_registry_token.pushtoken.name
-  }
 }
 
 resource "azurerm_resource_group" "test" {
@@ -151,23 +163,10 @@ resource "azurerm_container_registry" "acr" {
   }
 }
 
-data "azurerm_container_registry_scope_map" "push_repos" {
-  container_registry_name = azurerm_container_registry.acr.name
-  name                    = "_repositories_push"
-  resource_group_name     = azurerm_container_registry.acr.resource_group_name
-}
-
 data "azurerm_container_registry_scope_map" "pull_repos" {
   container_registry_name = azurerm_container_registry.acr.name
   name                    = "_repositories_pull"
   resource_group_name     = azurerm_container_registry.acr.resource_group_name
-}
-
-resource "azurerm_container_registry_token" "pushtoken" {
-  container_registry_name = azurerm_container_registry.acr.name
-  name                    = "pushtoken"
-  resource_group_name     = azurerm_container_registry.acr.resource_group_name
-  scope_map_id            = data.azurerm_container_registry_scope_map.push_repos.id
 }
 
 resource "azurerm_container_registry_token" "pulltoken" {
@@ -175,18 +174,6 @@ resource "azurerm_container_registry_token" "pulltoken" {
   name                    = "pulltoken"
   resource_group_name     = azurerm_container_registry.acr.resource_group_name
   scope_map_id            = data.azurerm_container_registry_scope_map.pull_repos.id
-}
-
-resource "azurerm_container_registry_token_password" "pushtokenpassword" {
-  container_registry_token_id = azurerm_container_registry_token.pushtoken.id
-
-  password1 {
-    expiry = timeadd(timestamp(), "24h")
-  }
-
-  lifecycle {
-    ignore_changes = [password1]
-  }
 }
 
 resource "azurerm_container_registry_token_password" "pulltokenpassword" {
@@ -201,13 +188,25 @@ resource "azurerm_container_registry_token_password" "pulltokenpassword" {
   }
 }
 
-resource "docker_image" "nginx" {
-  name = "nginx:latest"
-}
+resource "azapi_resource_action" "import_nginx" {
+  action      = "importImage"
+  method      = "POST"
+  resource_id = azurerm_container_registry.acr.id
+  type        = "Microsoft.ContainerRegistry/registries@2023-07-01"
+  body = {
+    mode = "Force"
+    source = {
+      registryUri = "docker.io"
+      sourceImage = "library/nginx:latest"
+    }
+    targetTags = ["nginx:latest"]
+  }
+  response_export_values = []
+  when                   = "apply"
 
-resource "docker_tag" "nginx" {
-  source_image = docker_image.nginx.name
-  target_image = "${azurerm_container_registry.acr.login_server}/${docker_image.nginx.name}"
+  lifecycle {
+    replace_triggered_by = [azurerm_container_registry.acr]
+  }
 }
 
 data "azurerm_client_config" "current" {}
@@ -280,7 +279,7 @@ module "container_apps" {
   }
   workload_profile_name = "Consumption"
 
-  depends_on = [docker_registry_image.remote]
+  depends_on = [azapi_resource_action.import_nginx]
 }
 ```
 
@@ -295,21 +294,18 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 4.20.0, < 5.0)
 
-- <a name="requirement_docker"></a> [docker](#requirement\_docker) (3.6.2)
-
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.0.0)
 
 ## Resources
 
 The following resources are used by this module:
 
+- [azapi_resource_action.import_nginx](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [azapi_resource_action.register_microsoft_app](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
 - [azurerm_container_app_environment.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_environment) (resource)
 - [azurerm_container_registry.acr](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_registry) (resource)
 - [azurerm_container_registry_token.pulltoken](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_registry_token) (resource)
-- [azurerm_container_registry_token.pushtoken](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_registry_token) (resource)
 - [azurerm_container_registry_token_password.pulltokenpassword](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_registry_token_password) (resource)
-- [azurerm_container_registry_token_password.pushtokenpassword](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_registry_token_password) (resource)
 - [azurerm_private_dns_a_record.data](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_a_record) (resource)
 - [azurerm_private_dns_a_record.private](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_a_record) (resource)
 - [azurerm_private_dns_zone.pdz](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone) (resource)
@@ -319,15 +315,11 @@ The following resources are used by this module:
 - [azurerm_subnet.container_app](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [docker_image.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/image) (resource)
-- [docker_registry_image.remote](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/registry_image) (resource)
-- [docker_tag.nginx](https://registry.terraform.io/providers/kreuzwerker/docker/3.6.2/docs/resources/tag) (resource)
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.env_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.rg_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 - [azurerm_container_registry_scope_map.pull_repos](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/container_registry_scope_map) (data source)
-- [azurerm_container_registry_scope_map.push_repos](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/container_registry_scope_map) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
