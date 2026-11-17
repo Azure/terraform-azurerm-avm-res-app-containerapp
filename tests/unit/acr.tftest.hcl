@@ -1,4 +1,10 @@
-mock_provider "azapi" {}
+mock_provider "azapi" {
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
+}
 
 mock_provider "azurerm" {
   mock_data "azurerm_client_config" {
@@ -59,8 +65,12 @@ mock_provider "random" {
   }
 }
 
-run "imports_nginx_into_the_authenticated_pull_registry" {
+run "acr_import" {
   command = apply
+
+  module {
+    source = "./examples/acr"
+  }
 
   providers = {
     azapi   = azapi
