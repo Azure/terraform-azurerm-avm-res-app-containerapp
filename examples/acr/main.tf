@@ -10,17 +10,6 @@ resource "random_id" "container_name" {
   byte_length = 4
 }
 
-resource "docker_registry_image" "remote" {
-  name          = docker_tag.nginx.target_image
-  keep_remotely = true
-
-  auth_config {
-    address  = "https://${azurerm_container_registry.acr.login_server}"
-    password = azurerm_container_registry_token_password.pushtokenpassword.password1[0].value
-    username = azurerm_container_registry_token.pushtoken.name
-  }
-}
-
 resource "azurerm_resource_group" "test" {
   location = var.location
   name     = "example-container-app-${random_id.rg_name.hex}"
@@ -144,23 +133,10 @@ resource "azurerm_container_registry" "acr" {
   }
 }
 
-data "azurerm_container_registry_scope_map" "push_repos" {
-  container_registry_name = azurerm_container_registry.acr.name
-  name                    = "_repositories_push"
-  resource_group_name     = azurerm_container_registry.acr.resource_group_name
-}
-
 data "azurerm_container_registry_scope_map" "pull_repos" {
   container_registry_name = azurerm_container_registry.acr.name
   name                    = "_repositories_pull"
   resource_group_name     = azurerm_container_registry.acr.resource_group_name
-}
-
-resource "azurerm_container_registry_token" "pushtoken" {
-  container_registry_name = azurerm_container_registry.acr.name
-  name                    = "pushtoken"
-  resource_group_name     = azurerm_container_registry.acr.resource_group_name
-  scope_map_id            = data.azurerm_container_registry_scope_map.push_repos.id
 }
 
 resource "azurerm_container_registry_token" "pulltoken" {
@@ -168,18 +144,6 @@ resource "azurerm_container_registry_token" "pulltoken" {
   name                    = "pulltoken"
   resource_group_name     = azurerm_container_registry.acr.resource_group_name
   scope_map_id            = data.azurerm_container_registry_scope_map.pull_repos.id
-}
-
-resource "azurerm_container_registry_token_password" "pushtokenpassword" {
-  container_registry_token_id = azurerm_container_registry_token.pushtoken.id
-
-  password1 {
-    expiry = timeadd(timestamp(), "24h")
-  }
-
-  lifecycle {
-    ignore_changes = [password1]
-  }
 }
 
 resource "azurerm_container_registry_token_password" "pulltokenpassword" {
@@ -194,13 +158,25 @@ resource "azurerm_container_registry_token_password" "pulltokenpassword" {
   }
 }
 
-resource "docker_image" "nginx" {
-  name = "nginx:latest"
-}
+resource "azapi_resource_action" "import_nginx" {
+  action      = "importImage"
+  method      = "POST"
+  resource_id = azurerm_container_registry.acr.id
+  type        = "Microsoft.ContainerRegistry/registries@2023-07-01"
+  body = {
+    mode = "Force"
+    source = {
+      registryUri = "docker.io"
+      sourceImage = "library/nginx:latest"
+    }
+    targetTags = ["nginx:latest"]
+  }
+  response_export_values = []
+  when                   = "apply"
 
-resource "docker_tag" "nginx" {
-  source_image = docker_image.nginx.name
-  target_image = "${azurerm_container_registry.acr.login_server}/${docker_image.nginx.name}"
+  lifecycle {
+    replace_triggered_by = [azurerm_container_registry.acr]
+  }
 }
 
 data "azurerm_client_config" "current" {}
@@ -273,5 +249,5 @@ module "container_apps" {
   }
   workload_profile_name = "Consumption"
 
-  depends_on = [docker_registry_image.remote]
+  depends_on = [azapi_resource_action.import_nginx]
 }
