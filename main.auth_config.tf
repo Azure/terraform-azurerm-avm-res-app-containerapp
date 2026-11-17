@@ -15,8 +15,3 @@ module "auth_config" {
   retry                     = var.retry
   timeouts                  = var.timeouts
 }
-
-moved {
-  from = azapi_resource.auth_config
-  to   = module.auth_config.azapi_resource.this
-}
