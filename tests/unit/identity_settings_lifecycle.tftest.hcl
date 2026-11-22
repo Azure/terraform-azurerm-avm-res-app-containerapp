@@ -1,15 +1,4 @@
-# Uses the real AzAPI provider (no Azure calls are made at plan time) so that
-# the provider's schema validation of the request body runs against the
-# Microsoft.App/containerApps API definition.
-provider "azapi" {
-  client_id                  = "00000000-0000-0000-0000-000000000000"
-  client_secret              = "unit-test"
-  skip_provider_registration = true
-  subscription_id            = "00000000-0000-0000-0000-000000000000"
-  tenant_id                  = "11111111-1111-1111-1111-111111111111"
-  use_cli                    = false
-  use_msi                    = false
-}
+mock_provider "azapi" {}
 
 override_data {
   target = data.azapi_client_config.current
