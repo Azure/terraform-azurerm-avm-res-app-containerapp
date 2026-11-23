@@ -29,10 +29,15 @@ resource "azapi_resource_action" "register_microsoft_app" {
   type        = "Microsoft.Resources/subscriptions@2021-04-01"
 }
 
-resource "azurerm_container_app_environment" "example" {
-  location            = azurerm_resource_group.test.location
-  name                = "my-environment"
-  resource_group_name = azurerm_resource_group.test.name
+resource "azapi_resource" "container_app_environment" {
+  location  = azurerm_resource_group.test.location
+  name      = "my-environment"
+  parent_id = azurerm_resource_group.test.id
+  type      = "Microsoft.App/managedEnvironments@2025-01-01"
+  body = {
+    properties = {}
+  }
+  response_export_values = []
 
   depends_on = [azapi_resource_action.register_microsoft_app]
 }
@@ -40,7 +45,7 @@ resource "azurerm_container_app_environment" "example" {
 module "counting" {
   source = "../.."
 
-  container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  container_app_environment_resource_id = azapi_resource.container_app_environment.id
   location                              = azurerm_resource_group.test.location
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
@@ -114,7 +119,7 @@ module "counting" {
 module "dashboard" {
   source = "../.."
 
-  container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  container_app_environment_resource_id = azapi_resource.container_app_environment.id
   location                              = azurerm_resource_group.test.location
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
