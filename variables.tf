@@ -4,6 +4,12 @@ variable "container_app_environment_resource_id" {
   nullable    = false
 }
 
+variable "location" {
+  type        = string
+  description = "Azure region where the Container App and telemetry deployment are deployed."
+  nullable    = false
+}
+
 variable "name" {
   type        = string
   description = "The name of the Container App."
@@ -746,15 +752,15 @@ variable "identity_settings" {
     ---
     `identity_settings` block supports the following:
     - `identity` - (Required) The resource ID of the user-assigned managed identity.
-    - `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, `Retain` and `All`. Defaults to `All`.
+    - `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `Main`, `None` and `All`. Defaults to `All`.
   EOT
 
   validation {
     condition = try(var.identity_settings == null ? true : alltrue([
       for setting in var.identity_settings :
-      setting == null ? true : contains(["Init", "None", "Retain", "All"], setting.lifecycle)
+      setting == null ? true : contains(["Init", "Main", "None", "All"], setting.lifecycle)
     ]), true)
-    error_message = "Possible values for `identity_settings.lifecycle` are `Init`, `None`, `Retain` and `All`."
+    error_message = "Possible values for `identity_settings.lifecycle` are `Init`, `Main`, `None` and `All`."
   }
 }
 
@@ -908,13 +914,6 @@ variable "kind" {
   type        = string
   default     = null
   description = "Metadata used to render different experiences for resources of the same type; e.g. WorkflowApp is a kind of Microsoft.App/ContainerApps type. If supported, the resource provider must validate and persist this value."
-}
-
-variable "location" {
-  type = string
-  #TODO:Remove default value in v1.0.0
-  default     = null
-  description = "Azure region where the resource should be deployed. If null, the location will be inferred from the resource group location. This variable would be required in v1.0.0."
 }
 
 # required AVM interfaces

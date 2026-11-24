@@ -9,13 +9,9 @@ module "auth_config" {
   global_validation         = each.value.global_validation
   http_settings             = each.value.http_settings
   identity_providers        = each.value.identity_providers
+  location                  = var.location
   login                     = each.value.login
   platform                  = each.value.platform
   retry                     = var.retry
   timeouts                  = var.timeouts
-}
-
-moved {
-  from = azapi_resource.auth_config
-  to   = module.auth_config.azapi_resource.this
 }

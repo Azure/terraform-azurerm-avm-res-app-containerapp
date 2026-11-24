@@ -6,6 +6,23 @@ This is a template repo for Terraform Azure Verified Container App Modules.
 
 This module *DOES NOT* contain other Container App related resource, including `azurerm_container_app_environment`.
 
+## Upgrade notes
+
+Existing AuthConfig state needs an explicit move for **each existing map key**
+before applying this version. Follow the [AuthConfig upgrade procedure](docs/upgrade-v0.10.0.md):
+`azapi_resource.auth_config["key"]` becomes
+`module.auth_config["key"].azapi_resource.this`, retaining the caller's full
+module prefix. A generic moved block cannot transpose these keys. Do not apply
+an upgrade plan that recreates or deletes existing AuthConfigs.
+
+`location` is now required and cannot be null, even when telemetry is disabled. Callers that previously omitted it must explicitly pass their existing resource group's region. Use the same region as the existing Container App to avoid a location change.
+
+The Interfaces dependency is upgraded from `0.5.0` to `0.9.0`. Role-assignment map keys and resource addresses are unchanged. Retain existing state and keys, and review the upgrade plan for unintended replacements.
+
+The `azure-functions`, `dapr`, `secret_path`, and `simple` examples now use `Azure/avm-utl-naming/azure` `0.2.0` instead of `Azure/naming/azurerm`. Generated names may change for existing example deployments; retain their state and review replacement plans before applying.
+
+Telemetry now uses subscription-scoped Azure deployments. With telemetry enabled, the deployment identity needs `Microsoft.Resources/deployments/read`, `Microsoft.Resources/deployments/write`, and `Microsoft.Resources/deployments/delete` at the active subscription scope. Existing telemetry state is forgotten without destruction; the old providers must remain available for the first initialization of existing state. See the [telemetry guidance](https://azure.github.io/Azure-Verified-Modules/help-support/telemetry/).
+
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
@@ -15,10 +32,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
-
-- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.0)
-
 ## Resources
 
 The following resources are used by this module:
@@ -26,15 +39,14 @@ The following resources are used by this module:
 - [azapi_resource.container_app](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.lock](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.role_assignments](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
+- [azapi_resource.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource_action.post_creation_update](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
-- [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
-- [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
+- [terraform_data.telemetry](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) (resource)
 - [terraform_data.update_keeper](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) (resource)
 - [azapi_client_config.current](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_client_config.telemetry](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/client_config) (data source)
 - [azapi_resource.existing](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
 - [azapi_resource.rg](https://registry.terraform.io/providers/Azure/azapi/latest/docs/data-sources/resource) (data source)
-- [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -44,6 +56,12 @@ The following input variables are required:
 ### <a name="input_container_app_environment_resource_id"></a> [container\_app\_environment\_resource\_id](#input\_container\_app\_environment\_resource\_id)
 
 Description: The ID of the Container App Environment to host this Container App.
+
+Type: `string`
+
+### <a name="input_location"></a> [location](#input\_location)
+
+Description: Azure region where the Container App and telemetry deployment are deployed.
 
 Type: `string`
 
@@ -721,7 +739,7 @@ Description: A list of identity settings for the Container App.
 ---
 `identity_settings` block supports the following:
 - `identity` - (Required) The resource ID of the user-assigned managed identity.
-- `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `None`, `Retain` and `All`. Defaults to `All`.
+- `lifecycle` - (Required) The lifecycle state of the identity. Possible values are `Init`, `Main`, `None` and `All`. Defaults to `All`.
 
 Type:
 
@@ -849,14 +867,6 @@ Default: `null`
 ### <a name="input_kind"></a> [kind](#input\_kind)
 
 Description: Metadata used to render different experiences for resources of the same type; e.g. WorkflowApp is a kind of Microsoft.App/ContainerApps type. If supported, the resource provider must validate and persist this value.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_location"></a> [location](#input\_location)
-
-Description: Azure region where the resource should be deployed. If null, the location will be inferred from the resource group location. This variable would be required in v1.0.0.
 
 Type: `string`
 
@@ -1162,10 +1172,14 @@ Version:
 
 Source: Azure/avm-utl-interfaces/azure
 
-Version: 0.5.0
+Version: 0.9.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection
 
-The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the [repository](https://aka.ms/avm/telemetry). There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft's privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
+
+## Trademarks
+
+**Trademarks** This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party's policies.
 <!-- END_TF_DOCS -->

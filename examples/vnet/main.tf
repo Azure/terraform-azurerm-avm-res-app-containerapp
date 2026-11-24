@@ -91,6 +91,7 @@ module "counting" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  location                              = azurerm_resource_group.test.location
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -119,7 +120,6 @@ module "counting" {
       percentage      = 100
     }]
   }
-  location              = azurerm_resource_group.test.location
   resource_group_id     = azurerm_resource_group.test.id
   revision_mode         = "Single"
   workload_profile_name = "Consumption"
@@ -131,6 +131,7 @@ module "dashboard" {
   source = "../.."
 
   container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  location                              = azurerm_resource_group.test.location
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -164,7 +165,6 @@ module "dashboard" {
       percentage      = 100
     }]
   }
-  location = azurerm_resource_group.test.location
   managed_identities = {
     system_assigned = true
   }

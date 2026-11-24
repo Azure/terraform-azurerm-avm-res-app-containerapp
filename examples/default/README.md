@@ -36,10 +36,15 @@ resource "azapi_resource_action" "register_microsoft_app" {
   type        = "Microsoft.Resources/subscriptions@2021-04-01"
 }
 
-resource "azurerm_container_app_environment" "example" {
-  location            = azurerm_resource_group.test.location
-  name                = "my-environment"
-  resource_group_name = azurerm_resource_group.test.name
+resource "azapi_resource" "container_app_environment" {
+  location  = azurerm_resource_group.test.location
+  name      = "my-environment"
+  parent_id = azurerm_resource_group.test.id
+  type      = "Microsoft.App/managedEnvironments@2025-01-01"
+  body = {
+    properties = {}
+  }
+  response_export_values = []
 
   depends_on = [azapi_resource_action.register_microsoft_app]
 }
@@ -47,7 +52,8 @@ resource "azurerm_container_app_environment" "example" {
 module "counting" {
   source = "../.."
 
-  container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  container_app_environment_resource_id = azapi_resource.container_app_environment.id
+  location                              = azurerm_resource_group.test.location
   name                                  = local.counting_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -103,7 +109,6 @@ module "counting" {
       percentage      = 100
     }]
   }
-  location          = azurerm_resource_group.test.location
   resource_group_id = azurerm_resource_group.test.id
   revision_mode     = "Single"
   secrets = {
@@ -121,7 +126,8 @@ module "counting" {
 module "dashboard" {
   source = "../.."
 
-  container_app_environment_resource_id = azurerm_container_app_environment.example.id
+  container_app_environment_resource_id = azapi_resource.container_app_environment.id
+  location                              = azurerm_resource_group.test.location
   name                                  = local.dashboard_app_name
   resource_group_name                   = azurerm_resource_group.test.name
   template = {
@@ -176,7 +182,6 @@ module "dashboard" {
       percentage      = 100
     }]
   }
-  location = azurerm_resource_group.test.location
   managed_identities = {
     system_assigned = true
   }
@@ -206,8 +211,8 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.container_app_environment](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource_action.register_microsoft_app](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource_action) (resource)
-- [azurerm_container_app_environment.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_environment) (resource)
 - [azurerm_resource_group.test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_id.container_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
 - [random_id.env_name](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)

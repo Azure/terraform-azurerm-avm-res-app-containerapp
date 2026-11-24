@@ -9,8 +9,8 @@ The above tutorial uses the template here: <https://github.com/Azure-Samples/Tut
 ```hcl
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.4.0"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 locals {
@@ -156,6 +156,7 @@ module "node_app" {
   source = "../../"
 
   container_app_environment_resource_id = azapi_resource.managed_environment.id
+  location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-node"
   resource_group_name                   = azurerm_resource_group.this.name
   template = {
@@ -194,7 +195,6 @@ module "node_app" {
       percentage      = 100
     }]
   }
-  location = azurerm_resource_group.this.location
   managed_identities = {
     user_assigned_resource_ids = [azurerm_user_assigned_identity.nodeapp.id]
   }
@@ -210,6 +210,7 @@ module "python_app" {
   source = "../../"
 
   container_app_environment_resource_id = azapi_resource.managed_environment.id
+  location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-python"
   resource_group_name                   = azurerm_resource_group.this.name
   template = {
@@ -227,7 +228,6 @@ module "python_app" {
     app_id  = "pythonapp"
   }
   enable_telemetry  = var.enable_telemetry
-  location          = azurerm_resource_group.this.location
   resource_group_id = azurerm_resource_group.this.id
   revision_mode     = "Single"
 
@@ -291,9 +291,9 @@ The following Modules are called:
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
-Source: Azure/naming/azurerm
+Source: Azure/avm-utl-naming/azure
 
-Version: 0.4.0
+Version: 0.2.0
 
 ### <a name="module_node_app"></a> [node\_app](#module\_node\_app)
 

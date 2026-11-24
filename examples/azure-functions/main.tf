@@ -36,8 +36,8 @@ resource "random_integer" "region_index" {
 
 ## Section to get naming module for resource names
 module "naming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.4.2"
+  source  = "Azure/avm-utl-naming/azure"
+  version = "0.2.0"
 }
 
 ## Section to create resource group
@@ -85,6 +85,7 @@ module "container_app" {
 
   # Basic configuration
   container_app_environment_resource_id = azurerm_container_app_environment.this.id
+  location                              = azurerm_resource_group.this.location
   name                                  = module.naming.container_app.name_unique
   resource_group_name                   = azurerm_resource_group.this.name
   # Container configuration for Azure Functions
@@ -112,7 +113,6 @@ module "container_app" {
   }
   # Enable Azure Functions hosting model
   kind                  = "functionapp"
-  location              = azurerm_resource_group.this.location
   resource_group_id     = azurerm_resource_group.this.id
   workload_profile_name = "Consumption"
 }

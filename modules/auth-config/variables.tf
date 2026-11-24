@@ -195,6 +195,17 @@ The configuration settings of each of the identity providers used to configure C
 EOT
 }
 
+variable "location" {
+  type        = string
+  default     = null
+  description = "The Azure region for the auth config telemetry deployment."
+
+  validation {
+    condition     = !var.enable_telemetry || var.location != null
+    error_message = "The location must not be null when telemetry is enabled."
+  }
+}
+
 variable "login" {
   type = object({
     routes = optional(object({
